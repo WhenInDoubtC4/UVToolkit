@@ -36,7 +36,7 @@ SOURCES += \
     UVEditorOverlayWindow.cpp \
     UVOutliner.cpp \
     UVOutlinerCmd.cpp \
-    UpdateMonitor.cpp
+    UVTreeWidgetItem.cpp
 
 HEADERS += \
     EditUVEditorWindowCmd.h \
@@ -47,7 +47,7 @@ HEADERS += \
     UVEditorOverlayWindow.h \
     UVOutliner.h \
     UVOutlinerCmd.h \
-    UpdateMonitor.h
+    UVTreeWidgetItem.h
 
 FORMS += \
     MainWindow.ui \

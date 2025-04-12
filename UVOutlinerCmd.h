@@ -40,6 +40,9 @@ public:
     inline static const char kShowWindowFlagShortName[] = "-sw";
     inline static const char kShowWindowFlagName[] = "-showWindow";
 
+    inline static const char kRefreshFlagShortName[] = "-r";
+    inline static const char kRefreshFlagName[] = "-refresh";
+
     inline static const char kAddMeshFlagShortName[] = "-am";
     inline static const char kAddMeshFlagName[] = "-addMesh";
 

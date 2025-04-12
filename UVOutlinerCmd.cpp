@@ -16,6 +16,7 @@ MSyntax UVOutlinerCmd::syntax()
     MSyntax syntax;
 
     syntax.addFlag(kShowWindowFlagShortName, kShowWindowFlagName);
+    syntax.addFlag(kRefreshFlagShortName, kRefreshFlagName);
     syntax.addFlag(kAddMeshFlagShortName, kAddMeshFlagName, MSyntax::kString);
     syntax.addFlag(kRemoveMeshFlagShortName, kRemoveMeshFlagName, MSyntax::kString);
 
@@ -52,7 +53,11 @@ MStatus UVOutlinerCmd::doIt(const MArgList& argList)
         //Only process any of these args if the window is actively visible
         //if (!_window || !_window->isVisible()) return MStatus::kSuccess;
 
-        if (argData.isFlagSet(kAddMeshFlagName))
+        if (argData.isFlagSet(kRefreshFlagName))
+        {
+            qDebug() << "UV outliner full refresh";
+        }
+        else if (argData.isFlagSet(kAddMeshFlagName))
         {
             MString meshName;
             if (!argData.getFlagArgument(kAddMeshFlagName, 0, meshName)) return MStatus::kInvalidParameter;

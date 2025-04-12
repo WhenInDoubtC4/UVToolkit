@@ -12,12 +12,16 @@
 #include <maya/MFnSingleIndexedComponent.h>
 #include <maya/MSelectionList.h>
 #include <maya/MEventMessage.h>
+#include <maya/MDGMessage.h>
+#include <maya/MSceneMessage.h>
 
 #include "MayaMixin.h"
+#include "Global.h"
+#include "UVTreeWidgetItem.h"
 
-namespace Ui {
+namespace Ui
+{
 class UVOutliner;
-class UVTreeWidgetItem;
 }
 
 //FWD
@@ -39,8 +43,6 @@ private:
     Ui::UVOutliner* ui;
     QWidget* _wrapper;
 
-    MCallbackId _selectionChangedCallbackId;
-
     MObject getUvsInShell(const MDagPath& dagPath, unsigned int shellIndex);
     MObject getFacesInShell(const MDagPath& dagPath, unsigned int shellIndex);
 
@@ -51,56 +53,15 @@ private:
 
     inline static bool _isPerformingSelection = false;
 
+    MCallbackId _selectionChangedCallbackId;
+    MCallbackId _nodeAddedCallbackId;
+    MCallbackId _nodeRemovedCallbackId;
+    MCallbackId _sceneUpdatedCallbackId;
+
+    void onNodeAdded(MObject& object);
+    void onNodeRemoved(MObject& object);
+    void onSceneUpdated();
+
 private slots:
     void onTreeWidgetItemSelectionChanged();
-};
-
-class UVTreeWidgetItem : public QTreeWidgetItem
-{
-    //Q_OBJECT
-
-public:
-    UVTreeWidgetItem(QTreeWidget* parent);
-    UVTreeWidgetItem(QTreeWidgetItem* parent);
-    virtual ~UVTreeWidgetItem();
-
-    enum SelectionState
-    {
-        NotSelected,
-        PartiallySelected,
-        FullySelected
-    };
-
-    SelectionState getSelectionState() const { return _selectionState; };
-    void setSelectionState(const SelectionState& state)
-    {
-        treeWidget()->update();
-        treeWidget()->viewport()->update();
-        _selectionState = state;
-    };
-
-    void setDagPath(const MDagPath& dagPath) { _dagPath = dagPath; };
-    void setUvShellId(unsigned int id) { _uvShellId = id; };
-
-    MDagPath getDagPath() const { return _dagPath; };
-    unsigned int getUvShellId() const { return _uvShellId; };
-
-    void setupUi(QWidget* widget);
-
-private:
-    Ui::UVTreeWidgetItem* _ui;
-
-    SelectionState _selectionState;
-
-    MDagPath _dagPath;
-    unsigned int _uvShellId;
-};
-
-// Custom delegate to paint the items based on their selection state
-class UVTreeWidgetItemDelegate : public QStyledItemDelegate
-{
-public:
-    UVTreeWidgetItemDelegate(QObject* parent = nullptr);
-
-    void paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const override;
 };

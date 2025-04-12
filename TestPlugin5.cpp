@@ -3,7 +3,6 @@
 #include "EditUVEditorWindowCmd.h"
 #include "UVOutlinerCmd.h"
 #include "MayaMixin.h"
-#include "UpdateMonitor.h"
 
 #include <maya/MFnPlugin.h>
 #include <maya/MGlobal.h>
@@ -50,8 +49,6 @@ MStatus initializePlugin( MObject obj )
 
     qInstallMessageHandler(myMessageOutput);
 
-    UpdateMonitor::getInstance();
-
     int result;
     MGlobal::executeCommand("workspaceControl -q -exists polyTexturePlacementPanel1Window", result);
     qDebug() << "REsult is " << result;
@@ -73,8 +70,6 @@ MStatus uninitializePlugin( MObject obj )
     MayaQWidgetDockableMixin::cleanup();
     MainWindowCmd::cleanup();
     UVOutlinerCmd::cleanup();
-
-    UpdateMonitor::cleanup();
 
     return MStatus::kSuccess;
 }
