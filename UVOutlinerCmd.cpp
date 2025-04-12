@@ -1,0 +1,107 @@
+#include "UVOutlinerCmd.h"
+
+UVOutlinerCmd::UVOutlinerCmd()
+    : MPxCommand()
+{
+
+}
+
+void* UVOutlinerCmd::creator()
+{
+    return new UVOutlinerCmd();
+}
+
+MSyntax UVOutlinerCmd::syntax()
+{
+    MSyntax syntax;
+
+    syntax.addFlag(kShowWindowFlagShortName, kShowWindowFlagName);
+    syntax.addFlag(kAddMeshFlagShortName, kAddMeshFlagName, MSyntax::kString);
+    syntax.addFlag(kRemoveMeshFlagShortName, kRemoveMeshFlagName, MSyntax::kString);
+
+    return syntax;
+}
+
+void UVOutlinerCmd::cleanup()
+{
+    if (_window) delete _window;
+}
+
+MStatus UVOutlinerCmd::doIt(const MArgList& argList)
+{
+    MArgDatabase argData(syntax(), argList);
+
+    if (argData.isFlagSet(kShowWindowFlagName))
+    {
+        if (_window)
+        {
+            _window->show();
+            _window->raise();
+
+            //TODO: Do a full refresh
+
+            return MStatus::kSuccess;
+        }
+
+        _window = new UVOutliner(MQtUtil::mainWindow());
+
+        buildUVTree(dynamic_cast<UVOutliner*>(_window)->getTreeWidget());
+    }
+    else
+    {
+        //Only process any of these args if the window is actively visible
+        //if (!_window || !_window->isVisible()) return MStatus::kSuccess;
+
+        if (argData.isFlagSet(kAddMeshFlagName))
+        {
+            MString meshName;
+            if (!argData.getFlagArgument(kAddMeshFlagName, 0, meshName)) return MStatus::kInvalidParameter;
+
+            MSelectionList selList;
+            if (!selList.add(meshName)) return MStatus::kInvalidParameter;
+
+            MDagPath dagPath;
+            selList.getDagPath(0, dagPath);
+            qDebug() << "Adding mesh to uv outliner" << dagPath.fullPathName().asChar();
+        }
+        else if (argData.isFlagSet(kRemoveMeshFlagName))
+        {
+            MString meshName;
+            if (!argData.getFlagArgument(kRemoveMeshFlagName, 0, meshName)) return MStatus::kInvalidParameter;
+
+            qDebug() << "Removing mesh from UV outliner" << meshName.asChar();
+        }
+    }
+
+    return MStatus::kSuccess;
+}
+
+void UVOutlinerCmd::buildUVTree(QTreeWidget* treeWidget)
+{
+    qDebug() << "All meshes:";
+    for(MItDag it(MItDag::TraversalType::kBreadthFirst, MFn::kTransform); !it.isDone(); it.next())
+    {
+        //Filter meshes
+        MDagPath path;
+        if (it.getPath(path) != MStatus::kSuccess)
+        {
+            MGlobal::displayError("Cannot get dag path for " + it.fullPathName());
+            continue;
+        }
+        if (!path.hasFn(MFn::kMesh)) continue;
+
+        //Create top level item for the mesh
+        MFnMesh mesh(path);
+
+        //TODO: Multi uv set support
+        MIntArray uvShellIds;
+        unsigned int uvShellCount;
+        mesh.getUvShellsIds(uvShellIds, uvShellCount);
+
+        for (unsigned int i = 0; i < uvShellCount; i++)
+        {
+            dynamic_cast<UVOutliner*>(_window)->addItem(path, i);
+        }
+    }
+}
+
