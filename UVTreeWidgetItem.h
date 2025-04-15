@@ -7,6 +7,7 @@
 
 #include <maya/MQtUtil.h>
 #include <maya/MDagPath.h>
+#include <maya/MFnTransform.h>
 
 namespace Ui
 {

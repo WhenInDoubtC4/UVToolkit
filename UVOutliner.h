@@ -14,10 +14,14 @@
 #include <maya/MEventMessage.h>
 #include <maya/MDGMessage.h>
 #include <maya/MSceneMessage.h>
+#include <maya/MItDag.h>
+#include <maya/MNodeMessage.h>
+#include <maya/MDagMessage.h>
 
 #include "MayaMixin.h"
 #include "Global.h"
 #include "UVTreeWidgetItem.h"
+#include "MeshData.h"
 
 namespace Ui
 {
@@ -37,7 +41,9 @@ public:
 
     QTreeWidget* getTreeWidget();
 
+    void addMesh(MeshData* mesh);
     UVTreeWidgetItem* addItem(const MDagPath& meshDagPath, unsigned int uvShellId, QTreeWidgetItem* parent = nullptr);
+    void removeItem(const MDagPath& meshDagPath) const;
 
 private:
     Ui::UVOutliner* ui;
@@ -48,9 +54,6 @@ private:
 
     void selectUVShell(const MDagPath& meshDagPath, unsigned int shellIndex, bool mergeWithExisting = false);
 
-    void onSelectionChanged();
-    static void onSelectionChanged_wrapper(void* clientData);
-
     inline static bool _isPerformingSelection = false;
 
     MCallbackId _selectionChangedCallbackId;
@@ -58,10 +61,14 @@ private:
     MCallbackId _nodeRemovedCallbackId;
     MCallbackId _sceneUpdatedCallbackId;
 
+    void onSelectionChanged();
     void onNodeAdded(MObject& object);
     void onNodeRemoved(MObject& object);
     void onSceneUpdated();
 
+    QSet<MeshData*> _meshData;
+
 private slots:
     void onTreeWidgetItemSelectionChanged();
+    void onUvShellAdded(MDagPath& mesh, unsigned int uvShellId);
 };

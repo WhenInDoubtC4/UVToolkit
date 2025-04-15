@@ -1,12 +1,13 @@
 #pragma once
 
-#include <tuple>
+#include <maya/MNodeMessage.h>
 
 //I worked so hard to find this number
 constexpr int DOCK_STATE_CHANGED_EVENT = 65528;
 
 //FWD
 class MObject;
+class MPlug;
 
 namespace wrappers
 {
@@ -41,4 +42,20 @@ void MNodeFunction_wrapper(MObject& node, void* clientData)
     using T = typename wrappers::member_function_class<decltype(MemberFunctionPtr)>::type;
     auto target = reinterpret_cast<T*>(clientData);
     if (target) (target->*MemberFunctionPtr)(node);
+}
+
+template <auto MemberFunctionPtr>
+void MAttr2PlugFunction_wrapper(MNodeMessage::AttributeMessage attributeMessage_enum, MPlug& plug, MPlug& otherPlug, void* clientData)
+{
+    using T = typename wrappers::member_function_class<decltype(MemberFunctionPtr)>::type;
+    auto target = reinterpret_cast<T*>(clientData);
+    if (target) (target->*MemberFunctionPtr)(attributeMessage_enum, plug, otherPlug);
+}
+
+template <auto MemberFunctionPtr>
+void MAttrPlugFunction_wrapper(MNodeMessage::AttributeMessage attributeMessage_enum, MPlug& plug,void* clientData)
+{
+    using T = typename wrappers::member_function_class<decltype(MemberFunctionPtr)>::type;
+    auto target = reinterpret_cast<T*>(clientData);
+    if (target) (target->*MemberFunctionPtr)(attributeMessage_enum, plug);
 }

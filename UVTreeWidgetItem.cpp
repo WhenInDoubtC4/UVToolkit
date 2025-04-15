@@ -24,7 +24,9 @@ void UVTreeWidgetItem::setupUi(QWidget* widget)
 {
     _ui->setupUi(widget);
 
-    _ui->label->setText(QStringLiteral("<b>%1</b> [%2]").arg(MQtUtil::toQString(_dagPath.partialPathName())).arg(_uvShellId));
+    MFnTransform transform(_dagPath.transform());
+
+    _ui->label->setText(QStringLiteral("<b>%1</b> [%2]").arg(MQtUtil::toQString(transform.partialPathName())).arg(_uvShellId));
 }
 
 UVTreeWidgetItemDelegate::UVTreeWidgetItemDelegate(QObject* parent)

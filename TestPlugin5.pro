@@ -27,10 +27,18 @@ TARGET_EXT = .mll
 
 TARGET = TestPlugin5
 
+#Copy .mll to the plugins folder
+copydata.commands = $(COPY_DIR) $$shell_path($$OUT_PWD/release/$${TARGET}$${TARGET_EXT}) $$shell_path($${DEVKIT_LOCATION}plug-ins/plug-ins)
+first.depends = $(first) copydata
+export(first.depends)
+export(copydata.commands)
+QMAKE_EXTRA_TARGETS += first copydata
+
 SOURCES += \
     EditUVEditorWindowCmd.cpp \
     MainWindow.cpp \
     MayaMixin.cpp \
+    MeshData.cpp \
     PyScript.cpp \
     TestPlugin5.cpp \
     UVEditorOverlayWindow.cpp \
@@ -43,6 +51,7 @@ HEADERS += \
     Global.h \
     MainWindow.h \
     MayaMixin.h \
+    MeshData.h \
     PyScript.h \
     UVEditorOverlayWindow.h \
     UVOutliner.h \

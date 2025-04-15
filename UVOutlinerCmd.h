@@ -40,19 +40,11 @@ public:
     inline static const char kShowWindowFlagShortName[] = "-sw";
     inline static const char kShowWindowFlagName[] = "-showWindow";
 
-    inline static const char kRefreshFlagShortName[] = "-r";
-    inline static const char kRefreshFlagName[] = "-refresh";
-
-    inline static const char kAddMeshFlagShortName[] = "-am";
-    inline static const char kAddMeshFlagName[] = "-addMesh";
-
-    inline static const char kRemoveMeshFlagShortName[] = "-rm";
-    inline static const char kRemoveMeshFlagName[] = "-removeMesh";
-
 private:
-    inline static MayaQWidgetDockableMixin* _window = nullptr;
+    inline static UVOutliner* _window = nullptr;
 
-    void buildUVTree(QTreeWidget* treeWidget);
+    void initMeshData();
+    //void buildUVTree(QTreeWidget* treeWidget);
 
     // void populateOutliner(QTreeWidget* treeWidget);
     // int getUVShellCount(const MFnMesh& meshFn, int uvSetIndex);
