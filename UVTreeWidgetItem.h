@@ -9,6 +9,8 @@
 #include <maya/MDagPath.h>
 #include <maya/MFnTransform.h>
 
+#include "MeshData.h"
+
 namespace Ui
 {
 class UVTreeWidgetItem;
@@ -38,10 +40,13 @@ public:
         _selectionState = state;
     };
 
-    void setDagPath(const MDagPath& dagPath) { _dagPath = dagPath; };
+    void setMeshData(MeshData* data) { _meshData = data; };
+    MeshData* getMeshData() const { return _meshData; };
+
+    // void setDagPath(const MDagPath& dagPath) { _dagPath = dagPath; };
     void setUvShellId(unsigned int id) { _uvShellId = id; };
 
-    MDagPath getDagPath() const { return _dagPath; };
+    // MDagPath getDagPath() const { return _dagPath; };
     unsigned int getUvShellId() const { return _uvShellId; };
 
     void setupUi(QWidget* widget);
@@ -51,7 +56,8 @@ private:
 
     SelectionState _selectionState;
 
-    MDagPath _dagPath;
+    MeshData* _meshData;
+    // MDagPath _dagPath;
     unsigned int _uvShellId;
 };
 

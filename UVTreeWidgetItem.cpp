@@ -24,7 +24,7 @@ void UVTreeWidgetItem::setupUi(QWidget* widget)
 {
     _ui->setupUi(widget);
 
-    MFnTransform transform(_dagPath.transform());
+    MFnTransform transform(_meshData->getDagPath().transform());
 
     _ui->label->setText(QStringLiteral("<b>%1</b> [%2]").arg(MQtUtil::toQString(transform.partialPathName())).arg(_uvShellId));
 }

@@ -42,17 +42,14 @@ public:
     QTreeWidget* getTreeWidget();
 
     void addMesh(MeshData* mesh);
-    UVTreeWidgetItem* addItem(const MDagPath& meshDagPath, unsigned int uvShellId, QTreeWidgetItem* parent = nullptr);
+    UVTreeWidgetItem* addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent = nullptr);
     void removeItem(const MDagPath& meshDagPath) const;
 
 private:
     Ui::UVOutliner* ui;
     QWidget* _wrapper;
 
-    MObject getUvsInShell(const MDagPath& dagPath, unsigned int shellIndex);
-    MObject getFacesInShell(const MDagPath& dagPath, unsigned int shellIndex);
-
-    void selectUVShell(const MDagPath& meshDagPath, unsigned int shellIndex, bool mergeWithExisting = false);
+    void selectUVShell(MeshData* meshData, unsigned int shellIndex, bool mergeWithExisting = false);
 
     inline static bool _isPerformingSelection = false;
 
@@ -70,5 +67,5 @@ private:
 
 private slots:
     void onTreeWidgetItemSelectionChanged();
-    void onUvShellAdded(MDagPath& mesh, unsigned int uvShellId);
+    void onUvShellAdded(MeshData* meshData, unsigned int uvShellId);
 };

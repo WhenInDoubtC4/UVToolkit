@@ -70,15 +70,16 @@ void UVOutliner::addMesh(MeshData* mesh)
     _meshData << mesh;
 }
 
-UVTreeWidgetItem* UVOutliner::addItem(const MDagPath& meshDagPath, unsigned int uvShellId, QTreeWidgetItem* parent)
+UVTreeWidgetItem* UVOutliner::addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent)
 {
-    qDebug() << "Adding item to tree" << meshDagPath.fullPathName().asChar();
+    qDebug() << "Adding item to tree" << meshData->getDagPath().fullPathName().asChar();
 
     UVTreeWidgetItem* item;
     if (!parent) item = new UVTreeWidgetItem(ui->treeWidget);
     else item = new UVTreeWidgetItem(parent);
 
-    item->setDagPath(meshDagPath);
+    //item->setDagPath(meshDagPath);
+    item->setMeshData(meshData);
     item->setUvShellId(uvShellId);
 
     auto wrapper = new QWidget(ui->treeWidget);
@@ -97,7 +98,7 @@ void UVOutliner::removeItem(const MDagPath& meshDagPath) const
         auto uvItem = dynamic_cast<UVTreeWidgetItem*>(*it);
         if (!uvItem) continue;
 
-        if (uvItem->getDagPath().fullPathName() != meshDagPath.fullPathName()) continue;
+        if (uvItem->getMeshData()->getDagPath().fullPathName() != meshDagPath.fullPathName()) continue;
 
         if (uvItem->parent())
         {
@@ -143,103 +144,23 @@ void UVOutliner::onTreeWidgetItemSelectionChanged()
         if (!uvItem) continue;
 
         uvItem->setSelectionState(UVTreeWidgetItem::FullySelected);
-        selectUVShell(uvItem->getDagPath(), uvItem->getUvShellId(), true);
+        selectUVShell(uvItem->getMeshData(), uvItem->getUvShellId(), true);
     }
     _isPerformingSelection = false;
 }
 
-void UVOutliner::onUvShellAdded(MDagPath& mesh, unsigned int uvShellId)
+void UVOutliner::onUvShellAdded(MeshData* meshData, unsigned int uvShellId)
 {
-    addItem(mesh, uvShellId);
+    addItem(meshData, uvShellId);
 }
 
-MObject UVOutliner::getUvsInShell(const MDagPath& dagPath, unsigned int shellIndex)
+void UVOutliner::selectUVShell(MeshData* meshData, unsigned int shellIndex, bool mergeWithExisting)
 {
-    MFnMesh mesh(dagPath);
+    MDagPath meshDagPath(meshData->getDagPath());
 
-    unsigned int numShells;
-    MIntArray shellIndices;
-    mesh.getUvShellsIds(shellIndices, numShells);
-
-    if (shellIndex >= numShells)
-    {
-        MGlobal::displayError("UV shell index mismatch on " + dagPath.fullPathName());
-        return MObject::kNullObj;
-    }
-
-    //Determine which UVs on the mesh belong to this shell
-    MIntArray uvIndices;
-    for (unsigned int i = 0; i < shellIndices.length(); i++)
-    {
-        if (shellIndices[i] == shellIndex) uvIndices.append(i);
-    }
-
-    MFnSingleIndexedComponent component;
-    MObject shellComponent = component.create(MFn::kMeshMapComponent);
-    component.addElements(uvIndices);
-
-    return shellComponent;
-}
-
-MObject UVOutliner::getFacesInShell(const MDagPath& dagPath, unsigned int shellIndex)
-{
-    MFnMesh mesh(dagPath);
-
-    unsigned int numShells;
-    MIntArray shellIndices;
-    mesh.getUvShellsIds(shellIndices, numShells);
-
-    if (shellIndex >= numShells)
-    {
-        MGlobal::displayError("UV shell index mismatch on " + dagPath.fullPathName());
-        return MObject::kNullObj;
-    }
-
-    //Start by getting the UVs that belong to this shell
-    MIntArray uvIndices;
-    for (unsigned int i = 0; i < shellIndices.length(); i++)
-    {
-        if (shellIndices[i] == shellIndex) uvIndices.append(i);
-    }
-
-    //Determine which faces (polygons) the UVs correspond to
-    QSet<int> faceIndices;
-    for (unsigned int f = 0; f < mesh.numPolygons(); f++)
-    {
-        for (unsigned int v = 0; v < mesh.polygonVertexCount(f); v++)
-        {
-            int polygonUvId;
-            mesh.getPolygonUVid(f, v, polygonUvId);
-
-            for (unsigned int i = 0; i < uvIndices.length(); i++)
-            {
-                if (polygonUvId == uvIndices[i])
-                {
-                    faceIndices << f;
-                    break;
-                }
-            }
-        }
-    }
-
-    MIntArray faceIndices_intArr;
-    for (const int& faceIndex : faceIndices)
-    {
-        faceIndices_intArr.append(faceIndex);
-    }
-
-    MFnSingleIndexedComponent component;
-    MObject shellComponent = component.create(MFn::kMeshPolygonComponent);
-    component.addElements(faceIndices_intArr);
-
-    return shellComponent;
-}
-
-void UVOutliner::selectUVShell(const MDagPath& meshDagPath, unsigned int shellIndex, bool mergeWithExisting)
-{
     qDebug() << "Selected " << meshDagPath.fullPathName().asChar();
 
-    MObject shellComponent = getFacesInShell(meshDagPath, shellIndex);
+    MObject shellComponent = meshData->getUvShell(shellIndex).faces;
 
     MSelectionList selList;
     if (mergeWithExisting)
@@ -280,16 +201,22 @@ void UVOutliner::onSelectionChanged()
         auto uvItem = dynamic_cast<UVTreeWidgetItem*>(*it);
         if (!uvItem) continue;
 
-        MObject uvsInShell = getUvsInShell(uvItem->getDagPath(), uvItem->getUvShellId());
-        MObject facesInShell = getFacesInShell(uvItem->getDagPath(), uvItem->getUvShellId());
+        MeshData::UVData uvShell(uvItem->getMeshData()->getUvShell(uvItem->getUvShellId()));
+        MObject uvsInShell = uvShell.uvs;
+        MObject facesInShell = uvShell.faces;
 
-        if (selList.hasItem(uvItem->getDagPath(), uvsInShell) || selList.hasItem(uvItem->getDagPath(), facesInShell))
+        MDagPath meshDagPath(uvItem->getMeshData()->getDagPath());
+
+        //MObject uvsInShell = getUvsInShell(uvItem->getDagPath(), uvItem->getUvShellId());
+        //MObject facesInShell = getFacesInShell(uvItem->getDagPath(), uvItem->getUvShellId());
+
+        if (selList.hasItem(meshDagPath, uvsInShell) || selList.hasItem(meshDagPath, facesInShell))
         {
             uvItem->setSelectionState(UVTreeWidgetItem::FullySelected);
             //Make it actually selected since the states are visual only
             uvItem->setSelected(true);
         }
-        else if (selList.hasItemPartly(uvItem->getDagPath(), uvsInShell))
+        else if (selList.hasItemPartly(meshDagPath, uvsInShell))
         {
             uvItem->setSelectionState(UVTreeWidgetItem::PartiallySelected);
         }
@@ -299,7 +226,6 @@ void UVOutliner::onSelectionChanged()
         }
      }
 }
-
 
 void UVOutliner::onNodeAdded(MObject& object)
 {
