@@ -22,6 +22,7 @@
 #include "Global.h"
 #include "UVTreeWidgetItem.h"
 #include "MeshData.h"
+#include "MeshManager.h"
 
 namespace Ui
 {
@@ -41,7 +42,6 @@ public:
 
     QTreeWidget* getTreeWidget();
 
-    void addMesh(MeshData* mesh);
     UVTreeWidgetItem* addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent = nullptr);
     void removeItem(const MDagPath& meshDagPath) const;
 
@@ -50,6 +50,7 @@ private:
     QWidget* _wrapper;
 
     void selectUVShell(MeshData* meshData, unsigned int shellIndex, bool mergeWithExisting = false);
+    void addExistingMeshes();
 
     inline static bool _isPerformingSelection = false;
 
@@ -62,8 +63,6 @@ private:
     void onNodeAdded(MObject& object);
     void onNodeRemoved(MObject& object);
     void onSceneUpdated();
-
-    QSet<MeshData*> _meshData;
 
 private slots:
     void onTreeWidgetItemSelectionChanged();

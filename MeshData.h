@@ -39,6 +39,7 @@ public:
     MString getMeshName() const { return _dagPath.partialPathName(); };
     MDagPath getDagPath() const { return _dagPath; }
     const UVData& getUvShell(unsigned int index);
+    unsigned int getNumUvShells() const { return _uvShellData.count(); };
 
 signals:
     void uvShellAdded(MeshData* data, unsigned int uvShellId);

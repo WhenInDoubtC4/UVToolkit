@@ -22,9 +22,12 @@ UVOutliner::UVOutliner(QWidget* parent)
 
     ui->treeWidget->setItemDelegate(new UVTreeWidgetItemDelegate(ui->treeWidget));
 
+    addExistingMeshes();
+
     /////////////////////////////////////////////////////////
     /// Add callbacks
     QObject::connect(ui->treeWidget, &QTreeWidget::itemSelectionChanged, this, &UVOutliner::onTreeWidgetItemSelectionChanged);
+    QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellAdded, this, &UVOutliner::onUvShellAdded);
 
     //_selectionChangedCallbackId = MEventMessage::addEventCallback("SelectionChanged", &UVOutliner::onSelectionChanged_wrapper, reinterpret_cast<void*>(this));
     _selectionChangedCallbackId = MEventMessage::addEventCallback("SelectionChanged", MBasicFunction_wrapper<&UVOutliner::onSelectionChanged>, this);
@@ -49,8 +52,6 @@ UVOutliner::~UVOutliner()
 
     MMessage::removeCallback(_sceneUpdatedCallbackId);
 
-    for (MeshData* data : _meshData) delete data;
-
     delete ui;
 }
 
@@ -59,16 +60,16 @@ QTreeWidget* UVOutliner::getTreeWidget()
     return ui->treeWidget;
 }
 
-void UVOutliner::addMesh(MeshData* mesh)
-{
-    //Add connections
-    QObject::connect(mesh, &MeshData::uvShellAdded, this, &UVOutliner::onUvShellAdded);
+// void UVOutliner::addMesh(MeshData* mesh)
+// {
+//     //Add connections
+//     QObject::connect(mesh, &MeshData::uvShellAdded, this, &UVOutliner::onUvShellAdded);
 
-    //Get all UV shells on the mesh
-    mesh->initUvShells();
+//     //Get all UV shells on the mesh
+//     mesh->initUvShells();
 
-    _meshData << mesh;
-}
+//     MeshManager::getInst()->addMesh(mesh);
+// }
 
 UVTreeWidgetItem* UVOutliner::addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent)
 {
@@ -172,6 +173,17 @@ void UVOutliner::selectUVShell(MeshData* meshData, unsigned int shellIndex, bool
     MGlobal::setActiveSelectionList(selList);
 }
 
+void UVOutliner::addExistingMeshes()
+{
+    for (MeshData* meshData : MeshManager::getInst()->getMeshData())
+    {
+        for (unsigned int i = 0; i < meshData->getNumUvShells(); i++)
+        {
+            addItem(meshData, i);
+        }
+    }
+}
+
 void UVOutliner::onSelectionChanged()
 {
     //Prevent infinite loop when the selection change is performed by the tree widget
@@ -239,7 +251,7 @@ void UVOutliner::onNodeAdded(MObject& object)
 
     if (!path.hasFn(MFn::kMesh)) return;
 
-    addMesh(new MeshData(path));
+    MeshManager::getInst()->addMesh(new MeshData(path));
 }
 
 void UVOutliner::onNodeRemoved(MObject& object)
@@ -250,18 +262,8 @@ void UVOutliner::onNodeRemoved(MObject& object)
     MString meshName = node.partialPathName();
     qDebug() << "Mesh removed, node name" << meshName.asChar();
 
-    MeshData* meshToRemove = nullptr;
-    for (MeshData* data : _meshData)
-    {
-        if (data->getMeshName() != meshName) continue;
-
-        //This will only remove one mesh at a time which can potentially be bad. Unsure if it will ever trigger multiple removals though
-        meshToRemove = data;
-        break;
-    }
-
+    MeshData* meshToRemove = MeshManager::getInst()->removeMeshByName(meshName);
     if (!meshToRemove) return;
-    _meshData.remove(meshToRemove);
     removeItem(meshToRemove->getDagPath());
     delete meshToRemove;
 }

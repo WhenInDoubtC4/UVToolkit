@@ -12,15 +12,9 @@
 
 #include <maya/MPxCommand.h>
 #include <maya/MSyntax.h>
-#include <maya/MArgDatabase.h>.h>
+#include <maya/MArgDatabase.h>
 #include <maya/MQtUtil.h>
-#include <maya/MSelectionList.h>
-#include <maya/MFnMesh.h>
-#include <maya/MDagPath.h>
-#include <maya/MDagPathArray.h>
-#include <maya/MItDag.h>
 
-#include "MayaMixin.h"
 #include "UVOutliner.h"
 
 class UVOutlinerCmd : public MPxCommand
@@ -42,11 +36,4 @@ public:
 
 private:
     inline static UVOutliner* _window = nullptr;
-
-    void initMeshData();
-    //void buildUVTree(QTreeWidget* treeWidget);
-
-    // void populateOutliner(QTreeWidget* treeWidget);
-    // int getUVShellCount(const MFnMesh& meshFn, int uvSetIndex);
-    // MIntArray getShellFaceIndices(const MFnMesh& meshFn, int shellIndex, int uvSetIndex);
 };
