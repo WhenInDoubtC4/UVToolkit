@@ -3,14 +3,19 @@
 #include "EditUVEditorWindowCmd.h"
 #include "UVOutlinerCmd.h"
 #include "MayaMixin.h"
+#include "GroupDataNode.h"
+#include "MeshManager.h"
 
 #include <maya/MFnPlugin.h>
 #include <maya/MGlobal.h>
 
 #include <maya/MEventMessage.h>
+#include <maya/MSceneMessage.h>
 
 MCallbackId uvEditorOpenCallbackId;
 MCallbackId uvEditorCloseCallbackId;
+MCallbackId afterPluginLoadedCallbackId;
+MCallbackId beforePluginUnloadedCallbackId;
 
 //Reroute qDebug() to stdout
 void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
@@ -22,6 +27,10 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
 MStatus initializePlugin( MObject obj )
 {
     MFnPlugin plugin(obj, "Adam Gyenes", "1.0", "Any");
+
+    qInstallMessageHandler(myMessageOutput);
+
+    plugin.registerNode(GroupDataNode::typeName, GroupDataNode::typeId, GroupDataNode::creator, GroupDataNode::initialize);
 
     plugin.registerCommand(MainWindowCmd::kCmdName, MainWindowCmd::creator);
     plugin.registerCommand(EditUVEditorWindowCmd::kCmdName, EditUVEditorWindowCmd::creator, EditUVEditorWindowCmd::syntax);
@@ -47,7 +56,26 @@ MStatus initializePlugin( MObject obj )
         MGlobal::displayWarning("UV editor closed!!");
     });
 
-    qInstallMessageHandler(myMessageOutput);
+    //Init an uninit mesh manager here so that it doesn't cause a race condition when
+    afterPluginLoadedCallbackId = MSceneMessage::addStringArrayCallback(MSceneMessage::kAfterPluginLoad, [](const MStringArray& strs, void* clientData)
+    {
+        MString pluginName = strs[1];
+        qDebug() << "Load plugin name:" << pluginName.asChar();
+
+        if (pluginName != PROJECT_NAME) return;
+
+        MeshManager::init();
+    });
+
+    beforePluginUnloadedCallbackId = MSceneMessage::addStringArrayCallback(MSceneMessage::kBeforePluginUnload, [](const MStringArray& strs, void* clientData)
+    {
+        MString pluginName = strs[0];
+        qDebug() << "Unload plugin name:" << pluginName.asChar();
+
+        if (pluginName != PROJECT_NAME) return;
+
+        MeshManager::cleanup();
+    });
 
     int result;
     MGlobal::executeCommand("workspaceControl -q -exists polyTexturePlacementPanel1Window", result);
@@ -60,12 +88,16 @@ MStatus uninitializePlugin( MObject obj )
 {
     MFnPlugin plugin(obj);
 
+    plugin.deregisterNode(GroupDataNode::typeId);
+
     plugin.deregisterCommand(MainWindowCmd::kCmdName);
     plugin.deregisterCommand(EditUVEditorWindowCmd::kCmdName);
     plugin.deregisterCommand(UVOutlinerCmd::kCmdName);
 
-    MEventMessage::removeCallback(uvEditorOpenCallbackId);
-    MEventMessage::removeCallback(uvEditorCloseCallbackId);
+    MMessage::removeCallback(uvEditorOpenCallbackId);
+    MMessage::removeCallback(uvEditorCloseCallbackId);
+    MMessage::removeCallback(afterPluginLoadedCallbackId);
+    MMessage::removeCallback(beforePluginUnloadedCallbackId);
 
     MayaQWidgetDockableMixin::cleanup();
     MainWindowCmd::cleanup();
