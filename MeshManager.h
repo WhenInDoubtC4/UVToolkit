@@ -2,6 +2,10 @@
 
 #include <QObject>
 #include <QDebug>
+#include <QPair>
+#include <QJsonDocument>
+#include <QJsonArray>
+#include <QJsonObject>
 
 #include <maya/MSelectionList.h>
 #include <maya/MDGModifier.h>
@@ -19,6 +23,27 @@ public:
     MeshManager(MeshManager& other) = delete;
     MeshManager(const MeshManager& other) = delete;
 
+    struct UVGroup
+    {
+    public:
+        void addUvShell(MeshData* mesh, unsigned int shellIndex);
+        QJsonObject serialize();
+
+        void setName(const QString& name) { _name = name; };
+
+        const long long getId() const { return _id; };
+        QString getName() { return _name; };
+
+    private:
+        friend class MeshManager;
+
+        long long _id = 0;
+        QString _name;
+        QList<QPair<MDagPath, unsigned int>> _shells;
+        UVGroup* _parent;
+        QSet<UVGroup*> _children;
+    };
+
     static MeshManager* getInst();
     static void init();
     static void cleanup();
@@ -26,6 +51,11 @@ public:
     void addMesh(MeshData* mesh);
     MeshData* removeMeshByName(const MString& name);
     const QSet<MeshData*>& getMeshData() const { return _meshData; };
+
+    UVGroup* createGroup(UVGroup* parent = nullptr);
+    void deleteGroup(UVGroup* group);
+
+    QJsonDocument serializeGroupData();
 
 signals:
     void meshUvShellAdded(MeshData* mesh, unsigned int shellIndex);
@@ -38,9 +68,12 @@ private:
     inline static MeshManager* _instance = nullptr;
     MObject _groupData;
     QSet<MeshData*> _meshData;
+    UVGroup* _groupDataRoot = nullptr;
+    inline static long long _nextGroupId = 0;
 
     MObject getGroupDataNode();
     void gatherExistingMeshes();
+    void clearGroupData(UVGroup* root);
 
 private slots:
     void onUvShellAdded(MeshData* mesh, unsigned int shellIndex);

@@ -7,6 +7,8 @@ MeshManager::MeshManager()
 
     _groupData = getGroupDataNode();
     gatherExistingMeshes();
+    _groupDataRoot = new UVGroup();
+    _groupDataRoot->_name = "<ROOT>";
 }
 
 MeshManager::~MeshManager()
@@ -18,6 +20,8 @@ MeshManager::~MeshManager()
     MGlobal::deleteNode(_groupData);
 
     for (MeshData* data : _meshData) delete data;
+
+    if (_groupDataRoot) clearGroupData(_groupDataRoot);
 }
 
 MeshManager* MeshManager::getInst()
@@ -68,6 +72,70 @@ MeshData* MeshManager::removeMeshByName(const MString& name)
     return meshToRemove;
 }
 
+MeshManager::UVGroup* MeshManager::createGroup(UVGroup* parent)
+{
+    if (!parent) parent = _groupDataRoot;
+
+    auto result = new UVGroup;
+    result->_id = ++_nextGroupId;
+    result->_parent = parent;
+
+    parent->_children << result;
+
+    return result;
+}
+
+void MeshManager::deleteGroup(UVGroup* group)
+{
+    group->_parent->_children.remove(group);
+
+    for (UVGroup* childGroup : group->_children) group->_parent->_children << childGroup;
+
+    delete group;
+}
+
+void MeshManager::UVGroup::addUvShell(MeshData* mesh, unsigned int shellIndex)
+{
+    _shells << qMakePair(mesh->getDagPath(), shellIndex);
+}
+
+QJsonDocument MeshManager::serializeGroupData()
+{
+    QJsonObject rootObject = _groupDataRoot->serialize();
+    return QJsonDocument(rootObject);
+}
+
+QJsonObject MeshManager::UVGroup::serialize()
+{
+    QJsonObject result;
+
+    result["id"] = static_cast<qint64>(_id);
+    result["name"] = _name;
+
+    QJsonArray shellArray;
+    for (const QPair<MDagPath, unsigned int>& shell : _shells)
+    {
+        QJsonObject shellObject;
+        shellObject["path"] = shell.first.fullPathName().asChar();
+        shellObject["shell"] = static_cast<qint64>(shell.second);
+
+        shellArray << shellObject;
+    }
+
+    result["shells"] = shellArray;
+    result["parent"] = static_cast<qint64>(_parent->_id);
+
+    QJsonArray childArray;
+    for (UVGroup* childGroup : _children)
+    {
+        childArray << childGroup->serialize();
+    }
+
+    result["children"] = childArray;
+
+    return result;
+}
+
 MObject MeshManager::getGroupDataNode()
 {
     MObject result;
@@ -116,6 +184,16 @@ void MeshManager::gatherExistingMeshes()
 
         addMesh(new MeshData(path));
     }
+}
+
+void MeshManager::clearGroupData(UVGroup* root)
+{
+    for (UVGroup* childItem : root->_children)
+    {
+        clearGroupData(childItem);
+    }
+    root->_children.clear();
+    delete root;
 }
 
 void MeshManager::onUvShellAdded(MeshData* mesh, unsigned int shellIndex)

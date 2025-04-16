@@ -38,6 +38,7 @@ QMAKE_EXTRA_TARGETS += first copydata
 SOURCES += \
     EditUVEditorWindowCmd.cpp \
     GroupDataNode.cpp \
+    GroupShellsCmd.cpp \
     MainWindow.cpp \
     MayaMixin.cpp \
     MeshData.cpp \
@@ -53,6 +54,7 @@ HEADERS += \
     EditUVEditorWindowCmd.h \
     Global.h \
     GroupDataNode.h \
+    GroupShellsCmd.h \
     MainWindow.h \
     MayaMixin.h \
     MeshData.h \
