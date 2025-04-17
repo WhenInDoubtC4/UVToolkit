@@ -148,11 +148,21 @@ void UVOutliner::onTreeWidgetItemSelectionChanged()
 
     for (QTreeWidgetItem* selectedItem : ui->treeWidget->selectedItems())
     {
+        //Select an individual shell
         auto uvItem = dynamic_cast<ShellTreeWidgetItem*>(selectedItem);
-        if (!uvItem) continue;
+        if (uvItem)
+        {
+            uvItem->setSelectionState(UVTreeWidgetItem::FullySelected, false, true);
+            selectUVShell(uvItem->getMeshData(), uvItem->getUvShellId(), true);
+        }
 
-        uvItem->setSelectionState(UVTreeWidgetItem::FullySelected);
-        selectUVShell(uvItem->getMeshData(), uvItem->getUvShellId(), true);
+        //Select an entire group
+        auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(selectedItem);
+        if (groupItem)
+        {
+            groupItem->setSelectionState(UVTreeWidgetItem::FullySelected, true, false);
+        }
+
     }
     _isPerformingSelection = false;
 }
@@ -326,13 +336,13 @@ void UVOutliner::onSelectionChanged()
 
         if (selList.hasItem(meshDagPath, uvsInShell) || selList.hasItem(meshDagPath, facesInShell))
         {
-            uvItem->setSelectionState(UVTreeWidgetItem::FullySelected);
+            uvItem->setSelectionState(UVTreeWidgetItem::FullySelected, false, true);
             //Make it actually selected since the states are visual only
             uvItem->setSelected(true);
         }
         else if (selList.hasItemPartly(meshDagPath, uvsInShell))
         {
-            uvItem->setSelectionState(UVTreeWidgetItem::PartiallySelected);
+            uvItem->setSelectionState(UVTreeWidgetItem::PartiallySelected, false, true);
         }
         else
         {

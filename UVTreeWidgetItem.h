@@ -26,12 +26,7 @@ public:
     };
 
     SelectionState getSelectionState() const { return _selectionState; };
-    void setSelectionState(const SelectionState& state)
-    {
-        treeWidget()->update();
-        treeWidget()->viewport()->update();
-        _selectionState = state;
-    };
+    void setSelectionState(const SelectionState& state, bool propagateToChildren = false, bool propagateToParents = false);
 
 private:
     SelectionState _selectionState;

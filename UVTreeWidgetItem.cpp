@@ -17,6 +17,35 @@ UVTreeWidgetItem::~UVTreeWidgetItem()
 
 }
 
+void UVTreeWidgetItem::setSelectionState(const SelectionState& state, bool propagateToChildren, bool propagateToParents)
+{
+    treeWidget()->update();
+    treeWidget()->viewport()->update();
+    _selectionState = state;
+
+    if (propagateToChildren)
+    {
+        for (int i = 0; i < childCount(); i++)
+        {
+            auto childItem = dynamic_cast<UVTreeWidgetItem*>(child(i));
+            if (!childItem) continue;
+
+            childItem->setSelectionState(state, true, propagateToParents);
+        }
+    }
+    //Use an else if here since if both are set it will cause an infinite loop
+    else if (propagateToParents)
+    {
+        if (!parent()) return;
+
+        auto parentItem = dynamic_cast<UVTreeWidgetItem*>(parent());
+        if (!parentItem) return;
+
+        SelectionState parentState = state == SelectionState::FullySelected ? SelectionState::PartiallySelected : state;
+        parentItem->setSelectionState(parentState, propagateToChildren, true);
+    }
+}
+
 UVTreeWidgetItemDelegate::UVTreeWidgetItemDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
 {
