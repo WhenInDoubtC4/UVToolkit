@@ -50,6 +50,9 @@ void MeshManager::cleanup()
 void MeshManager::addMesh(MeshData* mesh)
 {
     QObject::connect(mesh, &MeshData::uvShellAdded, this, &MeshManager::onUvShellAdded);
+    QObject::connect(mesh, &MeshData::uvShellIndexChanged, this, &MeshManager::onUvShellIndexChanged);
+    QObject::connect(mesh, &MeshData::uvShellRemoved, this, &MeshManager::onUvShellRemoved);
+    QObject::connect(mesh, &MeshData::uvShellSplit, this, &MeshManager::onUvShellSplit);
     mesh->initUvShells();
     _meshData << mesh;
 }
@@ -232,4 +235,30 @@ MeshManager::UVGroup* MeshManager::getShellGroup_impl(MeshData* mesh, unsigned i
 void MeshManager::onUvShellAdded(MeshData* mesh, unsigned int shellIndex)
 {
     emit meshUvShellAdded(mesh, shellIndex);
+}
+
+void MeshManager::onUvShellIndexChanged(MeshData* mesh, unsigned int oldIndex, unsigned int newIndex)
+{
+    emit meshUvShellIndexChanged(mesh, oldIndex, newIndex);
+}
+
+void MeshManager::onUvShellRemoved(MeshData* mesh, unsigned int index)
+{
+    //Remove shell from the group it belonged to, if applicable
+    UVGroup* shellGroup = getShellGroup(mesh, index);
+    if (shellGroup) shellGroup->removeUvShell(mesh, index);
+
+    emit meshUvShellRemoved(mesh, index);
+}
+
+void MeshManager::onUvShellSplit(MeshData* mesh, unsigned int oldShell, const QSet<int>& newIndices)
+{
+    UVGroup* originalGroup = getShellGroup(mesh, oldShell);
+
+    if (!originalGroup) return;
+
+    for (const int& newShellIndex : newIndices)
+    {
+        originalGroup->addUvShell(mesh, newShellIndex);
+    }
 }

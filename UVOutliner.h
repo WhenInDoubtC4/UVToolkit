@@ -43,6 +43,7 @@ public:
     ShellTreeWidgetItem* addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent = nullptr);
     GroupTreeWidgetItem* addItem(MeshManager::UVGroup* group, QTreeWidgetItem* parent = nullptr);
     void removeItem(const MDagPath& meshDagPath) const;
+    void removeItem(MeshData* mesh, unsigned int uvShellId);
 
 private:
     Ui::UVOutliner* ui;
@@ -67,6 +68,8 @@ private:
 private slots:
     void onTreeWidgetItemSelectionChanged();
     void onUvShellAdded(MeshData* meshData, unsigned int uvShellId);
+    void onUvShellIndexChanged(MeshData* meshData, unsigned int oldIndex, unsigned int newIndex);
+    void onUvShellRemoved(MeshData* meshData, unsigned int index);
     void onGroupCreated(MeshManager::UVGroup* group);
     void onUvShellAddedToGroup(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex);
     void onUvShellRemovedFromGroup(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex);

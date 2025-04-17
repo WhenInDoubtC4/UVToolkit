@@ -166,19 +166,21 @@ void MeshData::onUvShellSew(MPlug& sewPlug)
 
     QSet<int> oldShellIndices;
     MFnComponentListData componentList(inputComponentsPlug.asMDataHandle().data());
+    qDebug() << "Input operatoin had" << componentList.length() << "components";
     for (unsigned int i = 0; i < componentList.length(); i++)
     {
         MFnSingleIndexedComponent currentComponent(componentList[i]);
-        //TODO: handle stuff other than edges
+        //TODO: handle stuff other than edges?
         if (currentComponent.hasObj(MFn::kMeshEdgeComponent))
         {
-            MSelectionList sewnEdgeList;
-            sewnEdgeList.add(_dagPath, currentComponent.object());
-
             for (int shell = 0; shell < _uvShellData.count(); shell++)
             {
-                if (sewnEdgeList.hasItemPartly(_dagPath, _uvShellData[shell].edges))
+                MSelectionList edgeList;
+                edgeList.add(_dagPath, _uvShellData[shell].edges);
+
+                if (edgeList.hasItemPartly(_dagPath, componentList[i]))
                 {
+                    qDebug() << "Component" << i << "contained in shell" << shell;
                     oldShellIndices << shell;
                 }
             }
@@ -206,13 +208,12 @@ void MeshData::onTopologyChanged(MObject& node)
     mesh.getUvShellsIds(uvShellIds, numUvShells);
 
     if (numUvShells == _uvShellData.count()) return;
-
     qDebug() << "UV shell count change!";
 
     //Figure out which shells changed
     if (_nextOperation.type == UVOperationType::SPLIT)
     {
-        int oldShellIndex = _nextOperation.oldShellIndices.values()[0];
+        int oldShellIndex = *_nextOperation.oldShellIndices.begin();
         _nextOperation = UVOperation{UVOperationType::NOP, {}};
 
         //Split the UV shell data
@@ -229,6 +230,54 @@ void MeshData::onTopologyChanged(MObject& node)
 
         qDebug() << "Shell" << oldShellIndex << "has been split into shells:";
         for (const int& index : newShellIndices) qDebug() << index;
+
+        //Scenario 1/3: An already existing shell is modified
+        if (newShellIndices.contains(oldShellIndex))
+        {
+            //Reeval old shell
+            newShellIndices.remove(oldShellIndex);
+
+            MObject newUvs;
+            MObject newVertices;
+            MObject newFaces;
+            MObject newEdges;
+            getMeshUvData(oldShellIndex, newUvs, newVertices, newFaces, newEdges);
+            _uvShellData[oldShellIndex].uvs = newUvs;
+            _uvShellData[oldShellIndex].vertices = newVertices;
+            _uvShellData[oldShellIndex].faces = newFaces;
+            _uvShellData[oldShellIndex].edges = newEdges;
+        }
+
+        for (int newIndex : newShellIndices)
+        {
+            MObject uvs;
+            MObject vertices;
+            MObject faces;
+            MObject edges;
+            getMeshUvData(newIndex, uvs, vertices, faces, edges);
+            UVData uvData{uvs, vertices, faces, edges};
+
+            //Scenario 2/3: A new shell is inserted in the array, making all other (otherwise unaffected) shells reindexed
+            if (newIndex < _uvShellData.count())
+            {
+                _uvShellData.insert(newIndex, uvData);
+
+                //Increment all indices following the new index by 1
+                for (int i = newIndex + 1; i < _uvShellData.length(); i++)
+                {
+                    emit uvShellIndexChanged(this, i - 1, i);
+                }
+            }
+            else
+            //Scenario 3/3: A new shell is appended to the end, no reindexing
+            {
+                _uvShellData << uvData;
+            }
+
+            emit uvShellAdded(this, newIndex);
+        }
+
+        emit uvShellSplit(this, oldShellIndex, newShellIndices);
     }
     else if (_nextOperation.type == UVOperationType::MERGE)
     {
@@ -250,6 +299,42 @@ void MeshData::onTopologyChanged(MObject& node)
         qDebug() << "Shells";
         for (const int& index : oldShellIndices) qDebug() << index;
         qDebug() << "have been merged into shell" << newShellIndex;
+
+        //Reeval the new shell
+        if (oldShellIndices.contains(newShellIndex))
+        {
+            oldShellIndices.remove(newShellIndex);
+
+            MObject newUvs;
+            MObject newVertices;
+            MObject newFaces;
+            MObject newEdges;
+            getMeshUvData(newShellIndex, newUvs, newVertices, newFaces, newEdges);
+            _uvShellData[newShellIndex].uvs = newUvs;
+            _uvShellData[newShellIndex].vertices = newVertices;
+            _uvShellData[newShellIndex].faces = newFaces;
+            _uvShellData[newShellIndex].edges = newEdges;
+        }
+
+        for (const int& shell : oldShellIndices)
+        {
+            //Scenario 1/2: The old shells are removed from the end of the list
+            if (shell == _uvShellData.count() - 1)
+            {
+                _uvShellData.removeAt(shell);
+                emit uvShellRemoved(this, shell);
+            }
+            else
+            //Scenatio 2/2: The old shells are removed from the middle and shells need to be reindexed
+            {
+                _uvShellData.removeAt(shell);
+                emit uvShellRemoved(this, shell);
+                for (int i = shell; i < _uvShellData.length(); i++)
+                {
+                    emit uvShellIndexChanged(this, shell + 1, shell);
+                }
+            }
+        }
     }
 }
 
@@ -284,21 +369,27 @@ void MeshData::getMeshUvData(unsigned int shellIndex, MObject& outUvs, MObject& 
         if (uvShellIndices[i] == shellIndex) uvs.append(i);
     }
 
-    //Get faces
+    //Get faces and edges
     QSet<int> faceIndices;
-    for (unsigned int f = 0; f < mesh.numPolygons(); f++)
+    QSet<int> edgeIndices;
+    for (MItMeshPolygon faceIt(mesh.object()); !faceIt.isDone(); faceIt.next())
     {
         //This vertex index is local to the polygon
-        for (unsigned int v = 0; v < mesh.polygonVertexCount(f); v++)
+        for (unsigned int v = 0; v < faceIt.polygonVertexCount(); v++)
         {
             int polygonUvId;
-            mesh.getPolygonUVid(f, v, polygonUvId);
+            faceIt.getUVIndex(v, polygonUvId);
 
             for (unsigned int i = 0; i < uvs.length(); i++)
             {
                 if (polygonUvId == uvs[i])
                 {
-                    faceIndices << f;
+                    faceIndices << faceIt.index();
+
+                    MIntArray edges;
+                    faceIt.getEdges(edges);
+
+                    for (int& edge : edges) edgeIndices << edge;
                 }
             }
         }
@@ -312,24 +403,6 @@ void MeshData::getMeshUvData(unsigned int shellIndex, MObject& outUvs, MObject& 
         mesh.getPolygonVertices(faceIndex, verts);
 
         for (const int& vertexIndex : verts) vertexIndices << vertexIndex;
-    }
-
-    //Get edges
-    QSet<int> edgeIndices;
-    for (unsigned int e = 0; e < mesh.numEdges(); e++)
-    {
-        int2 edge;
-        mesh.getEdgeVertices(e, edge);
-
-        int contains = 0;
-        for (const int& vertexIndex : vertexIndices)
-        {
-            if (vertexIndex == edge[0] || vertexIndex == edge[1]) contains++;
-
-            if (contains == 2) break;
-        }
-
-        if (contains == 2) edgeIndices << e;
     }
 
     MIntArray vertexIndices_intArr;

@@ -64,6 +64,8 @@ public:
 
 signals:
     void meshUvShellAdded(MeshData* mesh, unsigned int shellIndex);
+    void meshUvShellIndexChanged(MeshData* data, unsigned int oldIndex, unsigned int newIndex);
+    void meshUvShellRemoved(MeshData* mesh, unsigned int index);
     void groupCreated(UVGroup* group);
     void uvShellAddedToGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
     void uvShellRemovedFromGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
@@ -86,4 +88,7 @@ private:
 
 private slots:
     void onUvShellAdded(MeshData* mesh, unsigned int shellIndex);
+    void onUvShellIndexChanged(MeshData* mesh, unsigned int oldIndex, unsigned int newIndex);
+    void onUvShellRemoved(MeshData* mesh, unsigned int index);
+    void onUvShellSplit(MeshData* mesh, unsigned int oldShell, const QSet<int>& newIndices);
 };

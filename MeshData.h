@@ -17,6 +17,7 @@
 #include <maya/MFnComponentListData.h>
 #include <maya/MFnSingleIndexedComponent.h>
 #include <maya/MSelectionList.h>
+#include <maya/MItMeshPolygon.h>
 
 #include "Global.h"
 
@@ -43,6 +44,9 @@ public:
 
 signals:
     void uvShellAdded(MeshData* data, unsigned int uvShellId);
+    void uvShellIndexChanged(MeshData* data, unsigned int oldIndex, unsigned int newIndex);
+    void uvShellRemoved(MeshData* data, unsigned int index);
+    void uvShellSplit(MeshData* data, unsigned int oldShell, const QSet<int>& newIndices);
 
 private:
     MDagPath _dagPath;

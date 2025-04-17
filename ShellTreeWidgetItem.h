@@ -20,11 +20,12 @@ public:
     void setMeshData(MeshData* data) { _meshData = data; };
     MeshData* getMeshData() const { return _meshData; };
 
-    void setUvShellId(unsigned int id) { _uvShellId = id; };
+    void setUvShellId(unsigned int id);
     unsigned int getUvShellId() const { return _uvShellId; };
 
 private:
     Ui::ShellTreeWidgetItem* _ui;
+    bool _isUiInit = false;
 
     MeshData* _meshData;
     unsigned int _uvShellId;

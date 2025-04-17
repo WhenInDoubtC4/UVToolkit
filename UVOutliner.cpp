@@ -28,6 +28,8 @@ UVOutliner::UVOutliner(QWidget* parent)
     /// Add callbacks
     QObject::connect(ui->treeWidget, &QTreeWidget::itemSelectionChanged, this, &UVOutliner::onTreeWidgetItemSelectionChanged);
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellAdded, this, &UVOutliner::onUvShellAdded);
+    QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellIndexChanged, this, &UVOutliner::onUvShellIndexChanged);
+    QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellRemoved, this, &UVOutliner::onUvShellRemoved);
     QObject::connect(MeshManager::getInst(), &MeshManager::groupCreated, this, &UVOutliner::onGroupCreated);
     QObject::connect(MeshManager::getInst(), &MeshManager::uvShellAddedToGroup, this, &UVOutliner::onUvShellAddedToGroup);
     QObject::connect(MeshManager::getInst(), &MeshManager::uvShellRemovedFromGroup, this, &UVOutliner::onUvShellRemovedFromGroup);
@@ -118,7 +120,33 @@ void UVOutliner::removeItem(const MDagPath& meshDagPath) const
             ui->treeWidget->takeTopLevelItem(itemIndex.row());
         }
 
+        delete uvItem;
         break;
+    }
+}
+
+void UVOutliner::removeItem(MeshData* mesh, unsigned int uvShellId)
+{
+    for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+    {
+        auto uvItem = dynamic_cast<ShellTreeWidgetItem*>(*it);
+        if (!uvItem) continue;
+
+        if (uvItem->getMeshData() == mesh && uvItem->getUvShellId() == uvShellId)
+        {
+            if (uvItem->parent())
+            {
+                uvItem->parent()->removeChild(uvItem);
+            }
+            else
+            {
+                int index = ui->treeWidget->indexOfTopLevelItem(uvItem);
+                ui->treeWidget->takeTopLevelItem(index);
+            }
+
+            delete uvItem;
+            break;
+        }
     }
 }
 
@@ -170,6 +198,26 @@ void UVOutliner::onTreeWidgetItemSelectionChanged()
 void UVOutliner::onUvShellAdded(MeshData* meshData, unsigned int uvShellId)
 {
     addItem(meshData, uvShellId);
+}
+
+void UVOutliner::onUvShellIndexChanged(MeshData* meshData, unsigned int oldIndex, unsigned int newIndex)
+{
+    for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+    {
+        auto uvItem = dynamic_cast<ShellTreeWidgetItem*>(*it);
+        if (!uvItem) continue;
+
+        if (uvItem->getMeshData() == meshData && uvItem->getUvShellId() == oldIndex)
+        {
+            uvItem->setUvShellId(newIndex);
+            break;
+        }
+    }
+}
+
+void UVOutliner::onUvShellRemoved(MeshData* meshData, unsigned int index)
+{
+    removeItem(meshData, index);
 }
 
 void UVOutliner::onGroupCreated(MeshManager::UVGroup* group)
@@ -328,19 +376,23 @@ void UVOutliner::onSelectionChanged()
         auto uvItem = dynamic_cast<ShellTreeWidgetItem*>(*it);
         if (!uvItem) continue;
 
-        MeshData::UVData uvShell(uvItem->getMeshData()->getUvShell(uvItem->getUvShellId()));
-        MObject uvsInShell = uvShell.uvs;
-        MObject facesInShell = uvShell.faces;
+        const MeshData::UVData& uvShell = uvItem->getMeshData()->getUvShell(uvItem->getUvShellId());
 
         MDagPath meshDagPath(uvItem->getMeshData()->getDagPath());
 
-        if (selList.hasItem(meshDagPath, uvsInShell) || selList.hasItem(meshDagPath, facesInShell))
+        if (selList.hasItem(meshDagPath, uvShell.uvs) ||
+            selList.hasItem(meshDagPath, uvShell.vertices) ||
+            selList.hasItem(meshDagPath, uvShell.faces) ||
+            selList.hasItem(meshDagPath, uvShell.edges))
         {
             uvItem->setSelectionState(UVTreeWidgetItem::FullySelected, false, true);
             //Make it actually selected since the states are visual only
             uvItem->setSelected(true);
         }
-        else if (selList.hasItemPartly(meshDagPath, uvsInShell))
+        else if (selList.hasItemPartly(meshDagPath, uvShell.uvs) ||
+                   selList.hasItemPartly(meshDagPath, uvShell.vertices) ||
+                   selList.hasItemPartly(meshDagPath, uvShell.faces) ||
+                   selList.hasItemPartly(meshDagPath, uvShell.edges))
         {
             uvItem->setSelectionState(UVTreeWidgetItem::PartiallySelected, false, true);
         }

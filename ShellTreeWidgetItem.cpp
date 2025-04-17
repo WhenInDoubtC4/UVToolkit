@@ -27,4 +27,17 @@ void ShellTreeWidgetItem::setupUi(QWidget* widget)
     MFnTransform transform(_meshData->getDagPath().transform());
 
     _ui->label->setText(QStringLiteral("<b>%1</b> [%2]").arg(MQtUtil::toQString(transform.partialPathName())).arg(_uvShellId));
+
+    _isUiInit = true;
+}
+
+void ShellTreeWidgetItem::setUvShellId(unsigned int id)
+{
+    _uvShellId = id;
+
+    if (!_isUiInit) return;
+
+    MFnTransform transform(_meshData->getDagPath().transform());
+
+    _ui->label->setText(QStringLiteral("<b>%1</b> [%2]").arg(MQtUtil::toQString(transform.partialPathName())).arg(_uvShellId));
 }
