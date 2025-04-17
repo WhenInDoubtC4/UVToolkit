@@ -94,13 +94,11 @@ MStatus GroupShellsCmd::doIt(const MArgList& argList)
         //Scenario 1/3: None of the shells belong to any group: Create a new group under the world and add shells
         if (shellGroups.contains(nullptr))
         {
-            qDebug() << "Scenario 1";
             newGroup = MeshManager::getInst()->createGroup();
         }
         else
         //Scenario 2/3: All shells belong to the same group: Create a group nested within the original group
         {
-            qDebug() << "Scenario 2";
             //Ungroup all shells first
             MeshManager::UVGroup* oldGroup = *shellGroups.begin();
             for (QPair<MeshData*, unsigned int>& shell : shells)
@@ -115,7 +113,6 @@ MStatus GroupShellsCmd::doIt(const MArgList& argList)
     //Scenario 3/3: The shells belong to different groups: Remove shells from their respecive existing groups (if applicable), create a new group under the world and add them
     else
     {
-        qDebug() << "Scenario 3";
         //Ungroup all shells
         for (QPair<MeshData*, unsigned int>& shell : shells)
         {
@@ -144,9 +141,7 @@ MStatus GroupShellsCmd::doIt(const MArgList& argList)
         newGroup->setName(MQtUtil::toQString(groupName));
     }
 
-    //Reparent group, if applicable
-
-    qDebug() << QString::fromUtf8(QJsonDocument(newGroup->serialize()).toJson(QJsonDocument::Compact));
+    qDebug() << QString::fromUtf8(MeshManager::getInst()->serializeGroupData().toJson(QJsonDocument::Compact));
 
     return MStatus::kSuccess;
 }

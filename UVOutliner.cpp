@@ -252,51 +252,6 @@ void UVOutliner::reparentUvShellItem(MeshManager::UVGroup* group, MeshData* mesh
 
 void UVOutliner::onUvShellAddedToGroup(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex)
 {
-    // GroupTreeWidgetItem* item = nullptr;
-    // for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
-    // {
-    //     auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(*it);
-    //     if (!groupItem) continue;
-
-    //     if (groupItem->getGroup() == group)
-    //     {
-    //         item = groupItem;
-    //         break;
-    //     }
-    // }
-
-    // if (!item) return;
-
-    // for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
-    // {
-    //     auto shellItem = dynamic_cast<ShellTreeWidgetItem*>(*it);
-    //     if (!shellItem) continue;
-
-    //     if (shellItem->getMeshData() == mesh && shellItem->getUvShellId() == shellIndex)
-    //     {
-    //         if (shellItem->parent())
-    //         {
-    //             shellItem->parent()->removeChild(shellItem);
-    //         }
-    //         else
-    //         {
-    //             int shellItemIndex = ui->treeWidget->indexOfTopLevelItem(shellItem);
-    //             ui->treeWidget->takeTopLevelItem(shellItemIndex);
-    //         }
-
-    //         item->addChild(shellItem);
-
-    //         //Recreate the wrapper widget
-    //         auto wrapper = new QWidget(ui->treeWidget);
-    //         wrapper->setContentsMargins(0, 0, 0, 0);
-    //         shellItem->setupUi(wrapper);
-
-    //         ui->treeWidget->setItemWidget(shellItem, 0, wrapper);
-    //         break;
-    //     }
-    // }
-    // item->setExpanded(true);
-
     reparentUvShellItem(group, mesh, shellIndex, true);
 }
 
