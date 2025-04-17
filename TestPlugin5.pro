@@ -39,11 +39,13 @@ SOURCES += \
     EditUVEditorWindowCmd.cpp \
     GroupDataNode.cpp \
     GroupShellsCmd.cpp \
+    GroupTreeWidgetItem.cpp \
     MainWindow.cpp \
     MayaMixin.cpp \
     MeshData.cpp \
     MeshManager.cpp \
     PyScript.cpp \
+    ShellTreeWidgetItem.cpp \
     TestPlugin5.cpp \
     UVEditorOverlayWindow.cpp \
     UVOutliner.cpp \
@@ -55,21 +57,24 @@ HEADERS += \
     Global.h \
     GroupDataNode.h \
     GroupShellsCmd.h \
+    GroupTreeWidgetItem.h \
     MainWindow.h \
     MayaMixin.h \
     MeshData.h \
     MeshManager.h \
     PyScript.h \
+    ShellTreeWidgetItem.h \
     UVEditorOverlayWindow.h \
     UVOutliner.h \
     UVOutlinerCmd.h \
     UVTreeWidgetItem.h
 
 FORMS += \
+    GroupTreeWidgetItem.ui \
     MainWindow.ui \
+    ShellTreeWidgetItem.ui \
     UVEditorOverlayWindow.ui \
-    UVOutliner.ui \
-    UVTreeWidgetItem.ui
+    UVOutliner.ui
 
 RESOURCES += \
     Scripts.qrc

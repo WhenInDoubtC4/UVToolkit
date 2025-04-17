@@ -20,7 +20,8 @@
 
 #include "MayaMixin.h"
 #include "Global.h"
-#include "UVTreeWidgetItem.h"
+#include "ShellTreeWidgetItem.h"
+#include "GroupTreeWidgetItem.h"
 #include "MeshData.h"
 #include "MeshManager.h"
 
@@ -28,9 +29,6 @@ namespace Ui
 {
 class UVOutliner;
 }
-
-//FWD
-class UVTreeWidgetItem;
 
 class UVOutliner : public MayaQWidgetDockableMixin
 {
@@ -42,7 +40,8 @@ public:
 
     QTreeWidget* getTreeWidget();
 
-    UVTreeWidgetItem* addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent = nullptr);
+    ShellTreeWidgetItem* addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent = nullptr);
+    GroupTreeWidgetItem* addItem(MeshManager::UVGroup* group, QTreeWidgetItem* parent = nullptr);
     void removeItem(const MDagPath& meshDagPath) const;
 
 private:
@@ -51,6 +50,7 @@ private:
 
     void selectUVShell(MeshData* meshData, unsigned int shellIndex, bool mergeWithExisting = false);
     void addExistingMeshes();
+    void reparentUvShellItem(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex, bool addToGroup = true);
 
     inline static bool _isPerformingSelection = false;
 
@@ -67,4 +67,7 @@ private:
 private slots:
     void onTreeWidgetItemSelectionChanged();
     void onUvShellAdded(MeshData* meshData, unsigned int uvShellId);
+    void onGroupCreated(MeshManager::UVGroup* group);
+    void onUvShellAddedToGroup(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex);
+    void onUvShellRemovedFromGroup(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex);
 };

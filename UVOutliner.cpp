@@ -28,8 +28,10 @@ UVOutliner::UVOutliner(QWidget* parent)
     /// Add callbacks
     QObject::connect(ui->treeWidget, &QTreeWidget::itemSelectionChanged, this, &UVOutliner::onTreeWidgetItemSelectionChanged);
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellAdded, this, &UVOutliner::onUvShellAdded);
+    QObject::connect(MeshManager::getInst(), &MeshManager::groupCreated, this, &UVOutliner::onGroupCreated);
+    QObject::connect(MeshManager::getInst(), &MeshManager::uvShellAddedToGroup, this, &UVOutliner::onUvShellAddedToGroup);
+    QObject::connect(MeshManager::getInst(), &MeshManager::uvShellRemovedFromGroup, this, &UVOutliner::onUvShellRemovedFromGroup);
 
-    //_selectionChangedCallbackId = MEventMessage::addEventCallback("SelectionChanged", &UVOutliner::onSelectionChanged_wrapper, reinterpret_cast<void*>(this));
     _selectionChangedCallbackId = MEventMessage::addEventCallback("SelectionChanged", MBasicFunction_wrapper<&UVOutliner::onSelectionChanged>, this);
 
     //Whenever a new node is added to the dependency graph
@@ -60,28 +62,33 @@ QTreeWidget* UVOutliner::getTreeWidget()
     return ui->treeWidget;
 }
 
-// void UVOutliner::addMesh(MeshData* mesh)
-// {
-//     //Add connections
-//     QObject::connect(mesh, &MeshData::uvShellAdded, this, &UVOutliner::onUvShellAdded);
-
-//     //Get all UV shells on the mesh
-//     mesh->initUvShells();
-
-//     MeshManager::getInst()->addMesh(mesh);
-// }
-
-UVTreeWidgetItem* UVOutliner::addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent)
+ShellTreeWidgetItem* UVOutliner::addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent)
 {
     qDebug() << "Adding item to tree" << meshData->getDagPath().fullPathName().asChar();
 
-    UVTreeWidgetItem* item;
-    if (!parent) item = new UVTreeWidgetItem(ui->treeWidget);
-    else item = new UVTreeWidgetItem(parent);
+    ShellTreeWidgetItem* item;
+    if (!parent) item = new ShellTreeWidgetItem(ui->treeWidget);
+    else item = new ShellTreeWidgetItem(parent);
 
-    //item->setDagPath(meshDagPath);
     item->setMeshData(meshData);
     item->setUvShellId(uvShellId);
+
+    auto wrapper = new QWidget(ui->treeWidget);
+    wrapper->setContentsMargins(0, 0, 0, 0);
+    item->setupUi(wrapper);
+
+    ui->treeWidget->setItemWidget(item, 0, wrapper);
+
+    return item;
+}
+
+GroupTreeWidgetItem* UVOutliner::addItem(MeshManager::UVGroup* group, QTreeWidgetItem* parent)
+{
+    GroupTreeWidgetItem* item;
+    if (!parent) item = new GroupTreeWidgetItem(ui->treeWidget);
+    else item = new GroupTreeWidgetItem(parent);
+
+    item->setGroup(group);
 
     auto wrapper = new QWidget(ui->treeWidget);
     wrapper->setContentsMargins(0, 0, 0, 0);
@@ -96,7 +103,7 @@ void UVOutliner::removeItem(const MDagPath& meshDagPath) const
 {
     for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
     {
-        auto uvItem = dynamic_cast<UVTreeWidgetItem*>(*it);
+        auto uvItem = dynamic_cast<ShellTreeWidgetItem*>(*it);
         if (!uvItem) continue;
 
         if (uvItem->getMeshData()->getDagPath().fullPathName() != meshDagPath.fullPathName()) continue;
@@ -141,7 +148,7 @@ void UVOutliner::onTreeWidgetItemSelectionChanged()
 
     for (QTreeWidgetItem* selectedItem : ui->treeWidget->selectedItems())
     {
-        auto uvItem = dynamic_cast<UVTreeWidgetItem*>(selectedItem);
+        auto uvItem = dynamic_cast<ShellTreeWidgetItem*>(selectedItem);
         if (!uvItem) continue;
 
         uvItem->setSelectionState(UVTreeWidgetItem::FullySelected);
@@ -153,6 +160,149 @@ void UVOutliner::onTreeWidgetItemSelectionChanged()
 void UVOutliner::onUvShellAdded(MeshData* meshData, unsigned int uvShellId)
 {
     addItem(meshData, uvShellId);
+}
+
+void UVOutliner::onGroupCreated(MeshManager::UVGroup* group)
+{
+    if (!group->getParent())
+    {
+        //Add as top level item
+        addItem(group);
+    }
+    else
+    {
+        //Find the parent item
+        GroupTreeWidgetItem* item = nullptr;
+        for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+        {
+            auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(*it);
+            if (!groupItem) continue;
+
+            if (groupItem->getGroup() == group->getParent())
+            {
+                item = groupItem;
+                break;
+            }
+        }
+
+        addItem(group, item);
+    }
+}
+
+void UVOutliner::reparentUvShellItem(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex, bool addToGroup)
+{
+    //Find the target group
+    GroupTreeWidgetItem* item = nullptr;
+    for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+    {
+        auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(*it);
+        if (!groupItem) continue;
+
+        if (groupItem->getGroup() == group)
+        {
+            item = groupItem;
+            break;
+        }
+    }
+
+    if (!item) return;
+
+    //Find the specific UV shell item
+    for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+    {
+        auto shellItem = dynamic_cast<ShellTreeWidgetItem*>(*it);
+        if (!shellItem) continue;
+
+        if (shellItem->getMeshData() == mesh && shellItem->getUvShellId() == shellIndex)
+        {
+            //Remove from the existing parent
+            if (shellItem->parent())
+            {
+                shellItem->parent()->removeChild(shellItem);
+            }
+            else
+            {
+                int shellItemIndex = ui->treeWidget->indexOfTopLevelItem(shellItem);
+                ui->treeWidget->takeTopLevelItem(shellItemIndex);
+            }
+
+            //Add to a newly created group
+            if (addToGroup)
+            {
+                item->addChild(shellItem);
+            }
+            //Remove from a group (add it back as top level)
+            else
+            {
+                ui->treeWidget->addTopLevelItem(shellItem);
+            }
+
+            //Recreate the wrapper widget
+            auto wrapper = new QWidget(ui->treeWidget);
+            wrapper->setContentsMargins(0, 0, 0, 0);
+            shellItem->setupUi(wrapper);
+
+            ui->treeWidget->setItemWidget(shellItem, 0, wrapper);
+
+            break;
+        }
+    }
+    if (addToGroup) item->setExpanded(true);
+}
+
+void UVOutliner::onUvShellAddedToGroup(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex)
+{
+    // GroupTreeWidgetItem* item = nullptr;
+    // for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+    // {
+    //     auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(*it);
+    //     if (!groupItem) continue;
+
+    //     if (groupItem->getGroup() == group)
+    //     {
+    //         item = groupItem;
+    //         break;
+    //     }
+    // }
+
+    // if (!item) return;
+
+    // for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+    // {
+    //     auto shellItem = dynamic_cast<ShellTreeWidgetItem*>(*it);
+    //     if (!shellItem) continue;
+
+    //     if (shellItem->getMeshData() == mesh && shellItem->getUvShellId() == shellIndex)
+    //     {
+    //         if (shellItem->parent())
+    //         {
+    //             shellItem->parent()->removeChild(shellItem);
+    //         }
+    //         else
+    //         {
+    //             int shellItemIndex = ui->treeWidget->indexOfTopLevelItem(shellItem);
+    //             ui->treeWidget->takeTopLevelItem(shellItemIndex);
+    //         }
+
+    //         item->addChild(shellItem);
+
+    //         //Recreate the wrapper widget
+    //         auto wrapper = new QWidget(ui->treeWidget);
+    //         wrapper->setContentsMargins(0, 0, 0, 0);
+    //         shellItem->setupUi(wrapper);
+
+    //         ui->treeWidget->setItemWidget(shellItem, 0, wrapper);
+    //         break;
+    //     }
+    // }
+    // item->setExpanded(true);
+
+    reparentUvShellItem(group, mesh, shellIndex, true);
+}
+
+void UVOutliner::onUvShellRemovedFromGroup(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex)
+{
+    reparentUvShellItem(group, mesh, shellIndex, false);
 }
 
 void UVOutliner::selectUVShell(MeshData* meshData, unsigned int shellIndex, bool mergeWithExisting)
@@ -210,7 +360,7 @@ void UVOutliner::onSelectionChanged()
 
     for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
     {
-        auto uvItem = dynamic_cast<UVTreeWidgetItem*>(*it);
+        auto uvItem = dynamic_cast<ShellTreeWidgetItem*>(*it);
         if (!uvItem) continue;
 
         MeshData::UVData uvShell(uvItem->getMeshData()->getUvShell(uvItem->getUvShellId()));
@@ -218,9 +368,6 @@ void UVOutliner::onSelectionChanged()
         MObject facesInShell = uvShell.faces;
 
         MDagPath meshDagPath(uvItem->getMeshData()->getDagPath());
-
-        //MObject uvsInShell = getUvsInShell(uvItem->getDagPath(), uvItem->getUvShellId());
-        //MObject facesInShell = getFacesInShell(uvItem->getDagPath(), uvItem->getUvShellId());
 
         if (selList.hasItem(meshDagPath, uvsInShell) || selList.hasItem(meshDagPath, facesInShell))
         {

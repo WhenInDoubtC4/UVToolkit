@@ -27,12 +27,15 @@ public:
     {
     public:
         void addUvShell(MeshData* mesh, unsigned int shellIndex);
+        void removeUvShell(MeshData* mesh, unsigned int shellIndex);
         QJsonObject serialize();
 
         void setName(const QString& name) { _name = name; };
 
         const long long getId() const { return _id; };
         QString getName() { return _name; };
+        const QList<QPair<MDagPath, unsigned int>>& getShells() const { return _shells; };
+        UVGroup* getParent() { return _parent; };
 
     private:
         friend class MeshManager;
@@ -57,8 +60,13 @@ public:
 
     QJsonDocument serializeGroupData();
 
+    UVGroup* getShellGroup(MeshData* mesh, unsigned int shellindex) const;
+
 signals:
     void meshUvShellAdded(MeshData* mesh, unsigned int shellIndex);
+    void groupCreated(UVGroup* group);
+    void uvShellAddedToGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
+    void uvShellRemovedFromGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
 
 protected:
     MeshManager();
@@ -74,6 +82,7 @@ private:
     MObject getGroupDataNode();
     void gatherExistingMeshes();
     void clearGroupData(UVGroup* root);
+    UVGroup* getShellGroup_impl(MeshData* mesh, unsigned int shellindex, UVGroup* root) const;
 
 private slots:
     void onUvShellAdded(MeshData* mesh, unsigned int shellIndex);

@@ -1,32 +1,20 @@
 #include "UVTreeWidgetItem.h"
-#include "ui_UVTreeWidgetItem.h"
 
 UVTreeWidgetItem::UVTreeWidgetItem(QTreeWidget* parent)
     : QTreeWidgetItem(parent)
-    , _ui(new Ui::UVTreeWidgetItem)
 {
 
 }
 
 UVTreeWidgetItem::UVTreeWidgetItem(QTreeWidgetItem* parent)
     : QTreeWidgetItem(parent)
-    , _ui(new Ui::UVTreeWidgetItem)
 {
 
 }
 
 UVTreeWidgetItem::~UVTreeWidgetItem()
 {
-    delete _ui;
-}
 
-void UVTreeWidgetItem::setupUi(QWidget* widget)
-{
-    _ui->setupUi(widget);
-
-    MFnTransform transform(_meshData->getDagPath().transform());
-
-    _ui->label->setText(QStringLiteral("<b>%1</b> [%2]").arg(MQtUtil::toQString(transform.partialPathName())).arg(_uvShellId));
 }
 
 UVTreeWidgetItemDelegate::UVTreeWidgetItemDelegate(QObject* parent)

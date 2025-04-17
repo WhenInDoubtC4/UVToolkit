@@ -82,6 +82,8 @@ MeshManager::UVGroup* MeshManager::createGroup(UVGroup* parent)
 
     parent->_children << result;
 
+    emit groupCreated(result);
+
     return result;
 }
 
@@ -97,6 +99,15 @@ void MeshManager::deleteGroup(UVGroup* group)
 void MeshManager::UVGroup::addUvShell(MeshData* mesh, unsigned int shellIndex)
 {
     _shells << qMakePair(mesh->getDagPath(), shellIndex);
+
+    emit MeshManager::getInst()->uvShellAddedToGroup(this, mesh, shellIndex);
+}
+
+void MeshManager::UVGroup::removeUvShell(MeshData* mesh, unsigned int shellIndex)
+{
+    _shells.removeAll(qMakePair(mesh->getDagPath(), shellIndex));
+
+    emit MeshManager::getInst()->uvShellRemovedFromGroup(this, mesh, shellIndex);
 }
 
 QJsonDocument MeshManager::serializeGroupData()
@@ -134,6 +145,11 @@ QJsonObject MeshManager::UVGroup::serialize()
     result["children"] = childArray;
 
     return result;
+}
+
+MeshManager::UVGroup* MeshManager::getShellGroup(MeshData* mesh, unsigned int shellindex) const
+{
+    return getShellGroup_impl(mesh, shellindex, _groupDataRoot);
 }
 
 MObject MeshManager::getGroupDataNode()
@@ -194,6 +210,22 @@ void MeshManager::clearGroupData(UVGroup* root)
     }
     root->_children.clear();
     delete root;
+}
+
+MeshManager::UVGroup* MeshManager::getShellGroup_impl(MeshData* mesh, unsigned int shellindex, UVGroup* root) const
+{
+    //Traverse the tree until the shell is found
+    for (const QPair<MDagPath, unsigned int>& shell : root->_shells)
+    {
+        if (shell.first == mesh->getDagPath() && shell.second == shellindex) return root;
+    }
+
+    for (UVGroup* child : root->_children)
+    {
+        return getShellGroup_impl(mesh, shellindex, child);
+    }
+
+    return nullptr;
 }
 
 void MeshManager::onUvShellAdded(MeshData* mesh, unsigned int shellIndex)

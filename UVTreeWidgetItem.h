@@ -9,13 +9,6 @@
 #include <maya/MDagPath.h>
 #include <maya/MFnTransform.h>
 
-#include "MeshData.h"
-
-namespace Ui
-{
-class UVTreeWidgetItem;
-}
-
 class UVTreeWidgetItem : public QTreeWidgetItem
 {
     //Q_OBJECT
@@ -40,25 +33,8 @@ public:
         _selectionState = state;
     };
 
-    void setMeshData(MeshData* data) { _meshData = data; };
-    MeshData* getMeshData() const { return _meshData; };
-
-    // void setDagPath(const MDagPath& dagPath) { _dagPath = dagPath; };
-    void setUvShellId(unsigned int id) { _uvShellId = id; };
-
-    // MDagPath getDagPath() const { return _dagPath; };
-    unsigned int getUvShellId() const { return _uvShellId; };
-
-    void setupUi(QWidget* widget);
-
 private:
-    Ui::UVTreeWidgetItem* _ui;
-
     SelectionState _selectionState;
-
-    MeshData* _meshData;
-    // MDagPath _dagPath;
-    unsigned int _uvShellId;
 };
 
 // Custom delegate to paint the items based on their selection state
