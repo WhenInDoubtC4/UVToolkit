@@ -64,7 +64,7 @@ MayaQWidgetDockableMixin::MayaQWidgetDockableMixin(QWidget* parent)
 
 MayaQWidgetDockableMixin::~MayaQWidgetDockableMixin()
 {
-    runDeleteCommand();
+    qDebug() << "Maya mixin window being deleted";
 }
 
 bool MayaQWidgetDockableMixin::isDockable()
@@ -117,7 +117,7 @@ void MayaQWidgetDockableMixin::setDockableParameters(bool dockable, bool floatin
                 {
                     MString result;
                     MGlobal::executeCommand(MQtUtil::toMString(
-                                                QStringLiteral("workspaceControl -label \"%1\" -retain true -loadImmediately true -floating true -initialWidth %2 -widthProperty free -initialHeight %3 -heightProperty free %4")
+                                                QStringLiteral("workspaceControl -label \"%1\" -retain false -loadImmediately true -floating true -initialWidth %2 -widthProperty free -initialHeight %3 -heightProperty free %4")
                                                     .arg(windowTitle())
                                                     .arg(width)
                                                     .arg(height)
@@ -128,7 +128,7 @@ void MayaQWidgetDockableMixin::setDockableParameters(bool dockable, bool floatin
                 {
                     MString result;
                     MGlobal::executeCommand(MQtUtil::toMString(
-                                                QStringLiteral("workspaceControl -label \"%1\" -retain true -loadImmediately true -floating true -initialWidth %2 -widthProperty free -minimumWidth %3 -initialHeight %4 -heightProperty free %5")
+                                                QStringLiteral("workspaceControl -label \"%1\" -retain false -loadImmediately true -floating true -initialWidth %2 -widthProperty free -minimumWidth %3 -initialHeight %4 -heightProperty free %5")
                                                     .arg(windowTitle())
                                                     .arg(width)
                                                     .arg(minimumWidth())
@@ -146,7 +146,7 @@ void MayaQWidgetDockableMixin::setDockableParameters(bool dockable, bool floatin
                     {
                         MString result;
                         MGlobal::executeCommand(MQtUtil::toMString(
-                                                    QStringLiteral("workspaceControl -label \"%1\" -retain true -loadImmediately true -dockToMainWindow %2 %3 -initialWidth %4 -widthProperty free -initialHeight %5 -heightProperty free %6")
+                                                    QStringLiteral("workspaceControl -label \"%1\" -retain false -loadImmediately true -dockToMainWindow %2 %3 -initialWidth %4 -widthProperty free -initialHeight %5 -heightProperty free %6")
                                                         .arg(windowTitle())
                                                         .arg(AREA_MAP[area])
                                                         .arg(false)
@@ -159,7 +159,7 @@ void MayaQWidgetDockableMixin::setDockableParameters(bool dockable, bool floatin
                     {
                         MString result;
                         MGlobal::executeCommand(MQtUtil::toMString(
-                                                    QStringLiteral("workspaceControl -label \"%1\" -retain true -loadImmediately true -dockToMainWindow %2 %3 -initialWidth %4 -widthProperty free -minimumWidth %5 -initialHeight %6 -heightProperty free %7")
+                                                    QStringLiteral("workspaceControl -label \"%1\" -retain false -loadImmediately true -dockToMainWindow %2 %3 -initialWidth %4 -widthProperty free -minimumWidth %5 -initialHeight %6 -heightProperty free %7")
                                                         .arg(windowTitle())
                                                         .arg(AREA_MAP[area])
                                                         .arg(false)
@@ -185,7 +185,7 @@ void MayaQWidgetDockableMixin::setDockableParameters(bool dockable, bool floatin
                             if (minimumWidth() == 0)
                             {
                                 MString result;
-                                MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("workspaceControl -label \"%1\" -retain true -loadImmediately true -dockToControl %2 %3 -initialWidth %4 -widthProperty free -initialHeight %5 -heightProperty free %6")
+                                MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("workspaceControl -label \"%1\" -retain false -loadImmediately true -dockToControl %2 %3 -initialWidth %4 -widthProperty free -initialHeight %5 -heightProperty free %6")
                                                                                .arg(windowTitle())
                                                                                .arg(workspaceControlName)
                                                                                .arg(AREA_MAP[area])
@@ -197,7 +197,7 @@ void MayaQWidgetDockableMixin::setDockableParameters(bool dockable, bool floatin
                             else
                             {
                                 MString result;
-                                MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("workspaceControl -label \"%1\" -retain true -loadImmediately true -dockToControl %2 %3 -initialWidth %4 -widthProperty free -minimumWidth %5 -initialHeight %6 -heightProperty free %7")
+                                MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("workspaceControl -label \"%1\" -retain false -loadImmediately true -dockToControl %2 %3 -initialWidth %4 -widthProperty free -minimumWidth %5 -initialHeight %6 -heightProperty free %7")
                                                                                .arg(windowTitle())
                                                                                .arg(workspaceControlName)
                                                                                .arg(AREA_MAP[area])
@@ -222,7 +222,7 @@ void MayaQWidgetDockableMixin::setDockableParameters(bool dockable, bool floatin
                         if (minimumWidth() == 0)
                         {
                             MString result;
-                            MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("workspaceControl -label \"%1\" -retain true -loadImmediately true -floating true -initialWidth %2 -widthProperty free -initialHeight %3 -heightProperty free %4")
+                            MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("workspaceControl -label \"%1\" -retain false -loadImmediately true -floating true -initialWidth %2 -widthProperty free -initialHeight %3 -heightProperty free %4")
                                                                            .arg(windowTitle())
                                                                            .arg(width)
                                                                            .arg(height)
@@ -232,7 +232,7 @@ void MayaQWidgetDockableMixin::setDockableParameters(bool dockable, bool floatin
                         else
                         {
                             MString result;
-                            MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("workspaceControl -label \"%1\" -retain true -loadImmediately true -floating true -initialWidth %2 -widthProperty free -minimumWidth %3 -initialHeight %4 -heightProperty free %5")
+                            MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("workspaceControl -label \"%1\" -retain false -loadImmediately true -floating true -initialWidth %2 -widthProperty free -minimumWidth %3 -initialHeight %4 -heightProperty free %5")
                                                                            .arg(windowTitle())
                                                                            .arg(width)
                                                                            .arg(minimumWidth())
@@ -286,7 +286,20 @@ void MayaQWidgetDockableMixin::setDockableParameters(bool dockable, bool floatin
         }
     }
 
+    getMayaControl()->installEventFilter(this);
+
     _allControls << _workspaceControlName;
+}
+
+bool MayaQWidgetDockableMixin::eventFilter(QObject* watched, QEvent* event)
+{
+    if (event->type() != QEvent::Close) return false;
+
+    runDeleteCommand();
+    deleteLater();
+    emit closeEventTriggered();
+
+    return false;
 }
 
 void MayaQWidgetDockableMixin::show()
@@ -357,6 +370,7 @@ void MayaQWidgetDockableMixin::runDeleteCommand()
     if (static_cast<bool>(exists_result))
     {
         MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("deleteUI -control %1").arg(_workspaceControlName)));
+        _allControls.removeAll(_workspaceControlName);
     }
 }
 

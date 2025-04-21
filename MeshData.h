@@ -37,6 +37,7 @@ public:
     };
 
     void initUvShells();
+    void refreshUvShells();
     MString getMeshName() const { return _dagPath.partialPathName(); };
     MDagPath getDagPath() const { return _dagPath; }
     const UVData& getUvShell(unsigned int index);
@@ -47,6 +48,7 @@ signals:
     void uvShellIndexChanged(MeshData* data, unsigned int oldIndex, unsigned int newIndex);
     void uvShellRemoved(MeshData* data, unsigned int index);
     void uvShellSplit(MeshData* data, unsigned int oldShell, const QSet<int>& newIndices);
+    void uvDataRefreshed(MeshData* data);
 
 private:
     MDagPath _dagPath;

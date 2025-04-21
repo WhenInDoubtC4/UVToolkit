@@ -8,6 +8,7 @@ MeshManager::MeshManager()
     _groupData = getGroupDataNode();
     gatherExistingMeshes();
     _groupDataRoot = new UVGroup();
+    _groupDataRoot->_id = -1;
     _groupDataRoot->_name = "<ROOT>";
 }
 
@@ -54,6 +55,7 @@ void MeshManager::addMesh(MeshData* mesh)
     QObject::connect(mesh, &MeshData::uvShellRemoved, this, &MeshManager::onUvShellRemoved);
     QObject::connect(mesh, &MeshData::uvShellSplit, this, &MeshManager::onUvShellSplit);
     mesh->initUvShells();
+    QObject::connect(mesh, &MeshData::uvDataRefreshed, this, &MeshManager::onUvDataRefreshed);
     _meshData << mesh;
 }
 
@@ -97,6 +99,13 @@ void MeshManager::deleteGroup(UVGroup* group)
     for (UVGroup* childGroup : group->_children) group->_parent->_children << childGroup;
 
     delete group;
+}
+
+void MeshManager::readdExistingGroups()
+{
+    qDebug() << "Readding existing groups";
+
+    readdExistingGroups_impl(_groupDataRoot);
 }
 
 void MeshManager::UVGroup::addUvShell(MeshData* mesh, unsigned int shellIndex)
@@ -154,6 +163,11 @@ QJsonObject MeshManager::UVGroup::serialize()
 MeshManager::UVGroup* MeshManager::getShellGroup(MeshData* mesh, unsigned int shellindex) const
 {
     return getShellGroup_impl(mesh, shellindex, _groupDataRoot);
+}
+
+void MeshManager::removeInvalidUvShells(MeshData* mesh)
+{
+    removeInvalidUvShells_impl(mesh, _groupDataRoot);
 }
 
 MObject MeshManager::getGroupDataNode()
@@ -232,6 +246,42 @@ MeshManager::UVGroup* MeshManager::getShellGroup_impl(MeshData* mesh, unsigned i
     return nullptr;
 }
 
+void MeshManager::removeInvalidUvShells_impl(MeshData* mesh, UVGroup* root)
+{
+    //Traverse the tree and get rid of any invalid shells
+    QSet<unsigned int> invalidShells;
+    for (const QPair<MDagPath, unsigned int>& shell : root->_shells)
+    {
+        if (shell.second >= mesh->getNumUvShells())
+        {
+            invalidShells << shell.second;
+        }
+    }
+
+    for (const unsigned int& invalidShellIndex : invalidShells)
+    {
+        qDebug() << "Removing invalid UV shell" << invalidShellIndex << "from mesh" << mesh->getDagPath().fullPathName().asChar();
+        root->removeUvShell(mesh, invalidShellIndex);
+
+        emit meshUvShellRemoved(mesh, invalidShellIndex);
+    }
+
+    for (UVGroup* child : root->_children)
+    {
+        removeInvalidUvShells_impl(mesh, child);
+    }
+}
+
+void MeshManager::readdExistingGroups_impl(UVGroup* root)
+{
+    if (root->_id >= 0) emit groupCreated(root);
+
+    for (UVGroup* child : root->_children)
+    {
+        readdExistingGroups_impl(child);
+    }
+}
+
 void MeshManager::onUvShellAdded(MeshData* mesh, unsigned int shellIndex)
 {
     emit meshUvShellAdded(mesh, shellIndex);
@@ -261,4 +311,12 @@ void MeshManager::onUvShellSplit(MeshData* mesh, unsigned int oldShell, const QS
     {
         originalGroup->addUvShell(mesh, newShellIndex);
     }
+}
+
+void MeshManager::onUvDataRefreshed(MeshData* mesh)
+{
+    //Remove invalid UV shells from groups
+    removeInvalidUvShells(mesh);
+
+    emit meshUvDataRefreshed(mesh);
 }

@@ -27,8 +27,6 @@ public:
 
     MStatus doIt(const MArgList& argList);
 
-    static void cleanup();
-
     inline static const char kCmdName[] = "uvOutliner";
 
     inline static const char kShowWindowFlagShortName[] = "-sw";

@@ -56,6 +56,17 @@ void MeshData::initUvShells()
     }
 }
 
+void MeshData::refreshUvShells()
+{
+    _isMeshInit = false;
+    _uvShellData.clear();
+
+    emit uvDataRefreshed(this);
+
+    //Assume cleanup has been done elsewhere and do not emit shell removed events
+    initUvShells();
+}
+
 const MeshData::UVData& MeshData::getUvShell(unsigned int index)
 {
     if (index >= _uvShellData.length())
@@ -207,7 +218,40 @@ void MeshData::onTopologyChanged(MObject& node)
     unsigned int numUvShells;
     mesh.getUvShellsIds(uvShellIds, numUvShells);
 
-    if (numUvShells == _uvShellData.count()) return;
+    //Change without new UVs added
+    if (numUvShells == _uvShellData.count())
+    {
+        //Get affected shells
+        QSet<int> affectedShells;
+        QList<int> perShellUvCount;
+        for (unsigned int i = 0; i < numUvShells; i++) perShellUvCount << 0;
+
+        for (unsigned int i = 0; i < uvShellIds.length(); i++)
+        {
+            perShellUvCount[uvShellIds[i]]++;
+        }
+
+        for (unsigned int i = 0; i < _uvShellData.count(); i++)
+        {
+            MFnSingleIndexedComponent uvComponent(_uvShellData[i].uvs);
+            if (uvComponent.elementCount() != perShellUvCount[i]) affectedShells << i;
+        }
+
+        for (const int& affectedShellIndex : affectedShells)
+        {
+            //Reeval affected shells
+            qDebug() << "Reevaluating shell" << affectedShellIndex << "on mesh" << _dagPath.fullPathName().asChar();
+
+            MObject uvs;
+            MObject vertices;
+            MObject faces;
+            MObject edges;
+            getMeshUvData(affectedShellIndex, uvs, vertices, faces, edges);
+            _uvShellData[affectedShellIndex] = {uvs, vertices, faces, edges};
+        }
+
+        return;
+    }
     qDebug() << "UV shell count change!";
 
     //Figure out which shells changed
@@ -335,6 +379,14 @@ void MeshData::onTopologyChanged(MObject& node)
                 }
             }
         }
+    }
+    else
+    {
+        qDebug() << "Refreshing all UV shell data on mesh" << _dagPath.fullPathName().asChar();
+
+        //Handle UV shell additions or deletions that are not a result of merges or splits
+        //There is no way other than to refresh everything
+        refreshUvShells();
     }
 }
 

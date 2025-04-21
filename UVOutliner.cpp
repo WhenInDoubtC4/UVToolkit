@@ -22,14 +22,13 @@ UVOutliner::UVOutliner(QWidget* parent)
 
     ui->treeWidget->setItemDelegate(new UVTreeWidgetItemDelegate(ui->treeWidget));
 
-    addExistingMeshes();
-
     /////////////////////////////////////////////////////////
     /// Add callbacks
     QObject::connect(ui->treeWidget, &QTreeWidget::itemSelectionChanged, this, &UVOutliner::onTreeWidgetItemSelectionChanged);
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellAdded, this, &UVOutliner::onUvShellAdded);
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellIndexChanged, this, &UVOutliner::onUvShellIndexChanged);
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellRemoved, this, &UVOutliner::onUvShellRemoved);
+    QObject::connect(MeshManager::getInst(), &MeshManager::meshUvDataRefreshed, this, &UVOutliner::onUvDataRefreshed);
     QObject::connect(MeshManager::getInst(), &MeshManager::groupCreated, this, &UVOutliner::onGroupCreated);
     QObject::connect(MeshManager::getInst(), &MeshManager::uvShellAddedToGroup, this, &UVOutliner::onUvShellAddedToGroup);
     QObject::connect(MeshManager::getInst(), &MeshManager::uvShellRemovedFromGroup, this, &UVOutliner::onUvShellRemovedFromGroup);
@@ -45,10 +44,16 @@ UVOutliner::UVOutliner(QWidget* parent)
 
     //Called after any operation that changes which files are loaded
     _sceneUpdatedCallbackId = MSceneMessage::addCallback(MSceneMessage::kSceneUpdate, MBasicFunction_wrapper<&UVOutliner::onSceneUpdated>, this);
+
+    /////////////////////////////////////////////////////////
+    /// Init existing meshes
+    addExistingMeshesAndGroups();
 }
 
 UVOutliner::~UVOutliner()
 {
+    qDebug() << "UV outliner deleted";
+
     MMessage::removeCallback(_selectionChangedCallbackId);
 
     MMessage::removeCallback(_nodeAddedCallbackId);
@@ -66,7 +71,7 @@ QTreeWidget* UVOutliner::getTreeWidget()
 
 ShellTreeWidgetItem* UVOutliner::addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent)
 {
-    qDebug() << "Adding item to tree" << meshData->getDagPath().fullPathName().asChar();
+    qDebug() << "Adding uv shell" << uvShellId << "for mesh" << meshData->getDagPath().fullPathName().asChar();
 
     ShellTreeWidgetItem* item;
     if (!parent) item = new ShellTreeWidgetItem(ui->treeWidget);
@@ -101,27 +106,50 @@ GroupTreeWidgetItem* UVOutliner::addItem(MeshManager::UVGroup* group, QTreeWidge
     return item;
 }
 
-void UVOutliner::removeItem(const MDagPath& meshDagPath) const
+void UVOutliner::removeItem(MeshData* mesh) const
 {
+    QSet<ShellTreeWidgetItem*> itemsToRemove;
     for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
     {
         auto uvItem = dynamic_cast<ShellTreeWidgetItem*>(*it);
-        if (!uvItem) continue;
+        if (!uvItem)
+        {
+            qDebug() << "Cast failed on item";
+            continue;
+        }
 
-        if (uvItem->getMeshData()->getDagPath().fullPathName() != meshDagPath.fullPathName()) continue;
+        if (uvItem->getMeshData() != mesh)
+        {
+            qDebug() << "Shell" << uvItem->getUvShellId() << "," << uvItem->getMeshData()->getDagPath().fullPathName().asChar() << "does not belong to mesh";
+            continue;
+        }
+
+        qDebug() << "Removing uv shell" << uvItem->getUvShellId() << "for mesh" << mesh->getDagPath().fullPathName().asChar();
 
         if (uvItem->parent())
         {
-            uvItem->parent()->removeChild(uvItem);
+            itemsToRemove << uvItem;
         }
         else
         {
-            QModelIndex itemIndex = ui->treeWidget->indexFromItem(uvItem);
-            ui->treeWidget->takeTopLevelItem(itemIndex.row());
+            itemsToRemove << uvItem;
+        }
+    }
+
+    //Do not edit the tree while actively iterating through it
+    for (ShellTreeWidgetItem* item : itemsToRemove)
+    {
+        if (item->parent())
+        {
+            item->parent()->removeChild(item);
+        }
+        else
+        {
+            int index = ui->treeWidget->indexOfTopLevelItem(item);
+            ui->treeWidget->takeTopLevelItem(index);
         }
 
-        delete uvItem;
-        break;
+        delete item;
     }
 }
 
@@ -197,7 +225,26 @@ void UVOutliner::onTreeWidgetItemSelectionChanged()
 
 void UVOutliner::onUvShellAdded(MeshData* meshData, unsigned int uvShellId)
 {
-    addItem(meshData, uvShellId);
+    MeshManager::UVGroup* group = MeshManager::getInst()->getShellGroup(meshData, uvShellId);
+
+    GroupTreeWidgetItem* target = nullptr;
+    if (group)
+    {
+        //Find the group
+        for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+        {
+            auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(*it);
+            if (!groupItem) continue;
+
+            if (groupItem->getGroup() == group)
+            {
+                target = groupItem;
+                break;
+            }
+        }
+    }
+
+    addItem(meshData, uvShellId, target);
 }
 
 void UVOutliner::onUvShellIndexChanged(MeshData* meshData, unsigned int oldIndex, unsigned int newIndex)
@@ -218,6 +265,12 @@ void UVOutliner::onUvShellIndexChanged(MeshData* meshData, unsigned int oldIndex
 void UVOutliner::onUvShellRemoved(MeshData* meshData, unsigned int index)
 {
     removeItem(meshData, index);
+}
+
+void UVOutliner::onUvDataRefreshed(MeshData* mesh)
+{
+    //Remove everything related to this mesh
+    removeItem(mesh);
 }
 
 void UVOutliner::onGroupCreated(MeshManager::UVGroup* group)
@@ -336,13 +389,15 @@ void UVOutliner::selectUVShell(MeshData* meshData, unsigned int shellIndex, bool
     MGlobal::setActiveSelectionList(selList);
 }
 
-void UVOutliner::addExistingMeshes()
+void UVOutliner::addExistingMeshesAndGroups()
 {
+    MeshManager::getInst()->readdExistingGroups();
+
     for (MeshData* meshData : MeshManager::getInst()->getMeshData())
     {
         for (unsigned int i = 0; i < meshData->getNumUvShells(); i++)
         {
-            addItem(meshData, i);
+            onUvShellAdded(meshData, i);
         }
     }
 }
@@ -428,7 +483,7 @@ void UVOutliner::onNodeRemoved(MObject& object)
 
     MeshData* meshToRemove = MeshManager::getInst()->removeMeshByName(meshName);
     if (!meshToRemove) return;
-    removeItem(meshToRemove->getDagPath());
+    removeItem(meshToRemove);
     delete meshToRemove;
 }
 

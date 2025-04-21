@@ -104,7 +104,6 @@ MStatus uninitializePlugin( MObject obj )
 
     MayaQWidgetDockableMixin::cleanup();
     MainWindowCmd::cleanup();
-    UVOutlinerCmd::cleanup();
 
     return MStatus::kSuccess;
 }

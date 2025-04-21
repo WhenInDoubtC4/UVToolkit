@@ -64,6 +64,7 @@ public:
     static void cleanup();
 
     QString getControlName();
+    bool eventFilter(QObject* watched, QEvent* event);
 
 signals:
     void closeEventTriggered();

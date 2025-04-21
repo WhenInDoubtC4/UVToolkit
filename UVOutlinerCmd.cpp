@@ -20,28 +20,13 @@ MSyntax UVOutlinerCmd::syntax()
     return syntax;
 }
 
-void UVOutlinerCmd::cleanup()
-{
-    if (_window) delete _window;
-}
-
 MStatus UVOutlinerCmd::doIt(const MArgList& argList)
 {
     MArgDatabase argData(syntax(), argList);
 
     if (argData.isFlagSet(kShowWindowFlagName))
     {
-        if (_window)
-        {
-            _window->show();
-            _window->raise();
-
-            //TODO: Do a full refresh
-
-            return MStatus::kSuccess;
-        }
-
-        _window = new UVOutliner(MQtUtil::mainWindow());
+        _window = new UVOutliner();
     }
 
     return MStatus::kSuccess;
