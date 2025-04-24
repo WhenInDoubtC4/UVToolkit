@@ -26,7 +26,7 @@ MStatus GroupShellsCmd::doIt(const MArgList& argList)
 
     MSelectionList currentSelection;
     MGlobal::getActiveSelectionList(currentSelection);
-\
+
     if (currentSelection.isEmpty())
     {
         MGlobal::displayInfo("Nothing selected");
@@ -52,7 +52,7 @@ MStatus GroupShellsCmd::doIt(const MArgList& argList)
     }
 
     QList<QPair<MeshData*, unsigned int>> shells;
-    for (MeshData* meshData : MeshManager::getInst()->getMeshData())
+    for (MeshData* meshData : MeshData::getMeshData())
     {
         //Check UV shells only on relevant meshes
         MDagPath meshPath(meshData->getDagPath());
@@ -81,26 +81,28 @@ MStatus GroupShellsCmd::doIt(const MArgList& argList)
     }
 
     //Find out what groups the shells belong to, if at all
-    QSet<MeshManager::UVGroup*> shellGroups;
+    QSet<UVGroup*> shellGroups;
     for (QPair<MeshData*, unsigned int>& shell : shells)
     {
-        MeshManager::UVGroup* shellGroup = MeshManager::getInst()->getShellGroup(shell.first, shell.second);
+        UVGroup* shellGroup = MeshManager::getInst()->getShellGroup(shell.first, shell.second);
         shellGroups << shellGroup;
     }
 
-    MeshManager::UVGroup* newGroup;
+    UVGroup* newGroup;
     if (shellGroups.count() == 1)
     {
         //Scenario 1/3: None of the shells belong to any group: Create a new group under the world and add shells
         if (shellGroups.contains(nullptr))
         {
+            qDebug() << "Creating new group under the world";
             newGroup = MeshManager::getInst()->createGroup();
         }
         else
         //Scenario 2/3: All shells belong to the same group: Create a group nested within the original group
         {
+            qDebug() << "Creating nested group";
             //Ungroup all shells first
-            MeshManager::UVGroup* oldGroup = *shellGroups.begin();
+            UVGroup* oldGroup = *shellGroups.begin();
             for (QPair<MeshData*, unsigned int>& shell : shells)
             {
                 oldGroup->removeUvShell(shell.first, shell.second);
@@ -113,10 +115,11 @@ MStatus GroupShellsCmd::doIt(const MArgList& argList)
     //Scenario 3/3: The shells belong to different groups: Remove shells from their respecive existing groups (if applicable), create a new group under the world and add them
     else
     {
+        qDebug() << "Removing shells from their existing groups";
         //Ungroup all shells
         for (QPair<MeshData*, unsigned int>& shell : shells)
         {
-            MeshManager::UVGroup* oldGroup = MeshManager::getInst()->getShellGroup(shell.first, shell.second);
+            UVGroup* oldGroup = MeshManager::getInst()->getShellGroup(shell.first, shell.second);
             if (!oldGroup) continue;
 
             oldGroup->removeUvShell(shell.first, shell.second);
@@ -126,9 +129,12 @@ MStatus GroupShellsCmd::doIt(const MArgList& argList)
         newGroup = MeshManager::getInst()->createGroup();
     }
 
+    qDebug() << "Adding shells to group...";
+
     //Assign the selected shells to the group (they should all be ungrouped at this point)
     for (QPair<MeshData*, unsigned int>& shell : shells)
     {
+        qDebug() << shell.first->getDagPath().fullPathName().asChar() << "shell" << shell.second;
         newGroup->addUvShell(shell.first, shell.second);
     }
 
@@ -141,7 +147,7 @@ MStatus GroupShellsCmd::doIt(const MArgList& argList)
         newGroup->setName(MQtUtil::toQString(groupName));
     }
 
-    qDebug() << QString::fromUtf8(MeshManager::getInst()->serializeGroupData().toJson(QJsonDocument::Compact));
+    //qDebug() << QString::fromUtf8(MeshManager::getInst()->serializeGroupData().toJson(QJsonDocument::Compact));
 
     return MStatus::kSuccess;
 }

@@ -6,6 +6,7 @@
 #include "GroupDataNode.h"
 #include "MeshManager.h"
 #include "GroupShellsCmd.h"
+#include "LayoutAllCmd.h"
 
 #include <maya/MFnPlugin.h>
 #include <maya/MGlobal.h>
@@ -37,6 +38,7 @@ MStatus initializePlugin( MObject obj )
     plugin.registerCommand(EditUVEditorWindowCmd::kCmdName, EditUVEditorWindowCmd::creator, EditUVEditorWindowCmd::syntax);
     plugin.registerCommand(UVOutlinerCmd::kCmdName, UVOutlinerCmd::creator, UVOutlinerCmd::syntax);
     plugin.registerCommand(GroupShellsCmd::kCmdName, GroupShellsCmd::creator, GroupShellsCmd::syntax);
+    plugin.registerCommand(LayoutAllCmd::kCmdName, LayoutAllCmd::creator);
 
     //Run init plugin script
     // PyScript script(":/onInitPlugin.py");
@@ -96,6 +98,7 @@ MStatus uninitializePlugin( MObject obj )
     plugin.deregisterCommand(EditUVEditorWindowCmd::kCmdName);
     plugin.deregisterCommand(UVOutlinerCmd::kCmdName);
     plugin.deregisterCommand(GroupShellsCmd::kCmdName);
+    plugin.deregisterCommand(LayoutAllCmd::kCmdName);
 
     MMessage::removeCallback(uvEditorOpenCallbackId);
     MMessage::removeCallback(uvEditorCloseCallbackId);

@@ -37,11 +37,15 @@ void GroupTreeWidgetItem::setupUi(QWidget* widget)
     widget->installEventFilter(eventFilter);
     QObject::connect(_ui->lineEdit, &QLineEdit::editingFinished, eventFilter, &GroupTreeWidgetItemEventFilter::onLineEditFinished);
     QObject::connect(_ui->lineEdit, &QLineEdit::inputRejected, eventFilter, &GroupTreeWidgetItemEventFilter::onLineEditFinished);
+
+    widget->setContextMenuPolicy(Qt::CustomContextMenu);
+    QObject::connect(widget, &QWidget::customContextMenuRequested, eventFilter, &GroupTreeWidgetItemEventFilter::onCustomContextMenuRequested);
 }
 
-GroupTreeWidgetItemEventFilter::GroupTreeWidgetItemEventFilter(GroupTreeWidgetItem* parent, QWidget* qObjectParent)
-    : QObject(qObjectParent)
+GroupTreeWidgetItemEventFilter::GroupTreeWidgetItemEventFilter(GroupTreeWidgetItem* parent, QWidget* widget)
+    : QObject(widget)
     , _parent(parent)
+    , _widget(widget)
 {
 
 }
@@ -71,4 +75,28 @@ void GroupTreeWidgetItemEventFilter::onLineEditFinished()
 
     _parent->_uvGroup->setName(newName);
     _parent->_ui->label->setText(newName);
+}
+
+void GroupTreeWidgetItemEventFilter::onCustomContextMenuRequested(const QPoint& pos)
+{
+    qDebug() << "Custom context menu requested";
+
+    QMenu contextMenu(_widget);
+
+    auto layoutAction = new QAction("Layout", _widget);
+    auto recursiveLayoutAction = new QAction("Layout recursively", _widget);
+    auto deleteAction = new QAction("Delete", _widget);
+
+    contextMenu.addAction(layoutAction);
+    contextMenu.addAction(recursiveLayoutAction);
+    contextMenu.addSeparator();
+    contextMenu.addAction(deleteAction);
+
+    QObject::connect(layoutAction, &QAction::triggered, this, [=]()
+    {
+        qDebug() << "Layout action triggered";
+        _parent->getGroup()->layout();
+    });
+
+    contextMenu.exec(_widget->mapToGlobal(pos));
 }

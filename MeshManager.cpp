@@ -20,7 +20,7 @@ MeshManager::~MeshManager()
     //TODO: This might have to be disabled so that it gets stored?
     MGlobal::deleteNode(_groupData);
 
-    for (MeshData* data : _meshData) delete data;
+    for (MeshData* data : MeshData::_meshData) delete data;
 
     if (_groupDataRoot) clearGroupData(_groupDataRoot);
 }
@@ -56,13 +56,13 @@ void MeshManager::addMesh(MeshData* mesh)
     QObject::connect(mesh, &MeshData::uvShellSplit, this, &MeshManager::onUvShellSplit);
     mesh->initUvShells();
     QObject::connect(mesh, &MeshData::uvDataRefreshed, this, &MeshManager::onUvDataRefreshed);
-    _meshData << mesh;
+    MeshData::_meshData << mesh;
 }
 
 MeshData* MeshManager::removeMeshByName(const MString& name)
 {
     MeshData* meshToRemove = nullptr;
-    for (MeshData* data : _meshData)
+    for (MeshData* data : MeshData::_meshData)
     {
         if (data->getMeshName() != name) continue;
 
@@ -72,22 +72,34 @@ MeshData* MeshManager::removeMeshByName(const MString& name)
     }
 
     if (!meshToRemove) return nullptr;
-    _meshData.remove(meshToRemove);
+    MeshData::_meshData.remove(meshToRemove);
 
     return meshToRemove;
 }
 
-MeshManager::UVGroup* MeshManager::createGroup(UVGroup* parent)
+UVGroup* MeshManager::createGroup(UVGroup* parent)
 {
     if (!parent) parent = _groupDataRoot;
 
-    auto result = new UVGroup;
+    auto result = new UVGroup();
     result->_id = ++_nextGroupId;
     result->_parent = parent;
 
     parent->_children << result;
 
     emit groupCreated(result);
+
+    return result;
+}
+
+QList<UVGroup*> MeshManager::getTopLevelGroups()
+{
+    QList<UVGroup*> result;
+
+    for (UVGroup* topLevelGroup : _groupDataRoot->_children)
+    {
+        result << topLevelGroup;
+    }
 
     return result;
 }
@@ -108,14 +120,14 @@ void MeshManager::readdExistingGroups()
     readdExistingGroups_impl(_groupDataRoot);
 }
 
-void MeshManager::UVGroup::addUvShell(MeshData* mesh, unsigned int shellIndex)
+void UVGroup::addUvShell(MeshData* mesh, unsigned int shellIndex)
 {
     _shells << qMakePair(mesh->getDagPath(), shellIndex);
 
     emit MeshManager::getInst()->uvShellAddedToGroup(this, mesh, shellIndex);
 }
 
-void MeshManager::UVGroup::removeUvShell(MeshData* mesh, unsigned int shellIndex)
+void UVGroup::removeUvShell(MeshData* mesh, unsigned int shellIndex)
 {
     _shells.removeAll(qMakePair(mesh->getDagPath(), shellIndex));
 
@@ -128,39 +140,7 @@ QJsonDocument MeshManager::serializeGroupData()
     return QJsonDocument(rootObject);
 }
 
-QJsonObject MeshManager::UVGroup::serialize()
-{
-    QJsonObject result;
-
-    result["id"] = static_cast<qint64>(_id);
-    result["name"] = _name;
-
-    QJsonArray shellArray;
-    for (const QPair<MDagPath, unsigned int>& shell : _shells)
-    {
-        QJsonObject shellObject;
-        shellObject["path"] = shell.first.fullPathName().asChar();
-        shellObject["shell"] = static_cast<qint64>(shell.second);
-
-        shellArray << shellObject;
-    }
-
-    result["shells"] = shellArray;
-    //Do this because of the root
-    result["parent"] = _parent ? static_cast<qint64>(_parent->_id) : -1;
-
-    QJsonArray childArray;
-    for (UVGroup* childGroup : _children)
-    {
-        childArray << childGroup->serialize();
-    }
-
-    result["children"] = childArray;
-
-    return result;
-}
-
-MeshManager::UVGroup* MeshManager::getShellGroup(MeshData* mesh, unsigned int shellindex) const
+UVGroup* MeshManager::getShellGroup(MeshData* mesh, unsigned int shellindex) const
 {
     return getShellGroup_impl(mesh, shellindex, _groupDataRoot);
 }
@@ -230,7 +210,7 @@ void MeshManager::clearGroupData(UVGroup* root)
     delete root;
 }
 
-MeshManager::UVGroup* MeshManager::getShellGroup_impl(MeshData* mesh, unsigned int shellindex, UVGroup* root) const
+UVGroup* MeshManager::getShellGroup_impl(MeshData* mesh, unsigned int shellindex, UVGroup* root) const
 {
     //Traverse the tree until the shell is found
     for (const QPair<MDagPath, unsigned int>& shell : root->_shells)
@@ -320,3 +300,5 @@ void MeshManager::onUvDataRefreshed(MeshData* mesh)
 
     emit meshUvDataRefreshed(mesh);
 }
+
+

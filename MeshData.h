@@ -36,6 +36,9 @@ public:
         MObject edges;
     };
 
+    static MeshData* getMeshData(const MDagPath& path);
+    static const QSet<MeshData*>& getMeshData() { return _meshData; };
+
     void initUvShells();
     void refreshUvShells();
     MString getMeshName() const { return _dagPath.partialPathName(); };
@@ -51,6 +54,9 @@ signals:
     void uvDataRefreshed(MeshData* data);
 
 private:
+    friend class MeshManager;
+    inline static QSet<MeshData*> _meshData;
+
     MDagPath _dagPath;
     bool _isMeshInit = false;
     QList<UVData> _uvShellData;

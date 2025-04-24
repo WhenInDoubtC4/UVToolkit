@@ -22,6 +22,18 @@ MeshData::~MeshData()
     MMessage::removeCallback(_topologyChangedCallbackId);
 }
 
+MeshData* MeshData::getMeshData(const MDagPath& path)
+{
+    for (MeshData* mesh : _meshData)
+    {
+        if (mesh->getDagPath().fullPathName() != path.fullPathName()) continue;
+
+        return mesh;
+    }
+
+    return nullptr;
+}
+
 void MeshData::initUvShells()
 {
     //Check if the mesh has been initialized yet

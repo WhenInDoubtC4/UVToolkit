@@ -40,6 +40,7 @@ SOURCES += \
     GroupDataNode.cpp \
     GroupShellsCmd.cpp \
     GroupTreeWidgetItem.cpp \
+    LayoutAllCmd.cpp \
     MainWindow.cpp \
     MayaMixin.cpp \
     MeshData.cpp \
@@ -48,6 +49,7 @@ SOURCES += \
     ShellTreeWidgetItem.cpp \
     TestPlugin5.cpp \
     UVEditorOverlayWindow.cpp \
+    UVGroup.cpp \
     UVOutliner.cpp \
     UVOutlinerCmd.cpp \
     UVTreeWidgetItem.cpp
@@ -58,6 +60,7 @@ HEADERS += \
     GroupDataNode.h \
     GroupShellsCmd.h \
     GroupTreeWidgetItem.h \
+    LayoutAllCmd.h \
     MainWindow.h \
     MayaMixin.h \
     MeshData.h \
@@ -65,6 +68,7 @@ HEADERS += \
     PyScript.h \
     ShellTreeWidgetItem.h \
     UVEditorOverlayWindow.h \
+    UVGroup.h \
     UVOutliner.h \
     UVOutlinerCmd.h \
     UVTreeWidgetItem.h

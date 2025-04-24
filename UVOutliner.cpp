@@ -25,6 +25,9 @@ UVOutliner::UVOutliner(QWidget* parent)
     /////////////////////////////////////////////////////////
     /// Add callbacks
     QObject::connect(ui->treeWidget, &QTreeWidget::itemSelectionChanged, this, &UVOutliner::onTreeWidgetItemSelectionChanged);
+    QObject::connect(ui->groupButton, &QPushButton::clicked, this, &UVOutliner::onGroupButtonClicked);
+    QObject::connect(ui->layoutAllButton, &QPushButton::clicked, this, &UVOutliner::onLayoutAllButtonClicked);
+
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellAdded, this, &UVOutliner::onUvShellAdded);
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellIndexChanged, this, &UVOutliner::onUvShellIndexChanged);
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellRemoved, this, &UVOutliner::onUvShellRemoved);
@@ -89,7 +92,7 @@ ShellTreeWidgetItem* UVOutliner::addItem(MeshData* meshData, unsigned int uvShel
     return item;
 }
 
-GroupTreeWidgetItem* UVOutliner::addItem(MeshManager::UVGroup* group, QTreeWidgetItem* parent)
+GroupTreeWidgetItem* UVOutliner::addItem(UVGroup* group, QTreeWidgetItem* parent)
 {
     GroupTreeWidgetItem* item;
     if (!parent) item = new GroupTreeWidgetItem(ui->treeWidget);
@@ -98,6 +101,7 @@ GroupTreeWidgetItem* UVOutliner::addItem(MeshManager::UVGroup* group, QTreeWidge
     item->setGroup(group);
 
     auto wrapper = new QWidget(ui->treeWidget);
+
     wrapper->setContentsMargins(0, 0, 0, 0);
     item->setupUi(wrapper);
 
@@ -223,9 +227,19 @@ void UVOutliner::onTreeWidgetItemSelectionChanged()
     _isPerformingSelection = false;
 }
 
+void UVOutliner::onGroupButtonClicked()
+{
+    MGlobal::executeCommand(GroupShellsCmd::kCmdName);
+}
+
+void UVOutliner::onLayoutAllButtonClicked()
+{
+    MGlobal::executeCommand(LayoutAllCmd::kCmdName);
+}
+
 void UVOutliner::onUvShellAdded(MeshData* meshData, unsigned int uvShellId)
 {
-    MeshManager::UVGroup* group = MeshManager::getInst()->getShellGroup(meshData, uvShellId);
+    UVGroup* group = MeshManager::getInst()->getShellGroup(meshData, uvShellId);
 
     GroupTreeWidgetItem* target = nullptr;
     if (group)
@@ -273,7 +287,7 @@ void UVOutliner::onUvDataRefreshed(MeshData* mesh)
     removeItem(mesh);
 }
 
-void UVOutliner::onGroupCreated(MeshManager::UVGroup* group)
+void UVOutliner::onGroupCreated(UVGroup* group)
 {
     if (!group->getParent())
     {
@@ -300,8 +314,15 @@ void UVOutliner::onGroupCreated(MeshManager::UVGroup* group)
     }
 }
 
-void UVOutliner::reparentUvShellItem(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex, bool addToGroup)
+void UVOutliner::reparentUvShellItem(UVGroup* group, MeshData* mesh, unsigned int shellIndex, bool addToGroup)
 {
+    qDebug() << "UV outliner: reparenting UV shell item" << mesh->getDagPath().fullPathName().asChar() << shellIndex;
+
+    if (!group)
+    {
+        qDebug() << "Group is not valid!!!";
+    }
+
     //Find the target group
     GroupTreeWidgetItem* item = nullptr;
     for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
@@ -361,12 +382,14 @@ void UVOutliner::reparentUvShellItem(MeshManager::UVGroup* group, MeshData* mesh
     if (addToGroup) item->setExpanded(true);
 }
 
-void UVOutliner::onUvShellAddedToGroup(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex)
+void UVOutliner::onUvShellAddedToGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex)
 {
+    qDebug() << "UV Outliner: Shell added to group" << mesh->getDagPath().fullPathName().asChar() << shellIndex;
+
     reparentUvShellItem(group, mesh, shellIndex, true);
 }
 
-void UVOutliner::onUvShellRemovedFromGroup(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex)
+void UVOutliner::onUvShellRemovedFromGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex)
 {
     reparentUvShellItem(group, mesh, shellIndex, false);
 }
@@ -393,7 +416,7 @@ void UVOutliner::addExistingMeshesAndGroups()
 {
     MeshManager::getInst()->readdExistingGroups();
 
-    for (MeshData* meshData : MeshManager::getInst()->getMeshData())
+    for (MeshData* meshData : MeshData::getMeshData())
     {
         for (unsigned int i = 0; i < meshData->getNumUvShells(); i++)
         {

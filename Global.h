@@ -5,6 +5,12 @@
 //I worked so hard to find this number
 constexpr int DOCK_STATE_CHANGED_EVENT = 65528;
 
+namespace Commands
+{
+constexpr char LAYOUT_UV[] = "LayoutUV";
+constexpr char DELETE_SELECTION[] = "doDelete";
+}
+
 //FWD
 class MObject;
 class MPlug;

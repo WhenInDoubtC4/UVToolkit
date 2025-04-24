@@ -24,6 +24,8 @@
 #include "GroupTreeWidgetItem.h"
 #include "MeshData.h"
 #include "MeshManager.h"
+#include "GroupShellsCmd.h"
+#include "LayoutAllCmd.h"
 
 namespace Ui
 {
@@ -41,7 +43,7 @@ public:
     QTreeWidget* getTreeWidget();
 
     ShellTreeWidgetItem* addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent = nullptr);
-    GroupTreeWidgetItem* addItem(MeshManager::UVGroup* group, QTreeWidgetItem* parent = nullptr);
+    GroupTreeWidgetItem* addItem(UVGroup* group, QTreeWidgetItem* parent = nullptr);
     void removeItem(MeshData* mesh) const;
     void removeItem(MeshData* mesh, unsigned int uvShellId);
 
@@ -51,7 +53,7 @@ private:
 
     void selectUVShell(MeshData* meshData, unsigned int shellIndex, bool mergeWithExisting = false);
     void addExistingMeshesAndGroups();
-    void reparentUvShellItem(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex, bool addToGroup = true);
+    void reparentUvShellItem(UVGroup* group, MeshData* mesh, unsigned int shellIndex, bool addToGroup = true);
 
     inline static bool _isPerformingSelection = false;
 
@@ -67,11 +69,13 @@ private:
 
 private slots:
     void onTreeWidgetItemSelectionChanged();
+    void onGroupButtonClicked();
+    void onLayoutAllButtonClicked();
     void onUvShellAdded(MeshData* meshData, unsigned int uvShellId);
     void onUvShellIndexChanged(MeshData* meshData, unsigned int oldIndex, unsigned int newIndex);
     void onUvShellRemoved(MeshData* meshData, unsigned int index);
     void onUvDataRefreshed(MeshData* mesh);
-    void onGroupCreated(MeshManager::UVGroup* group);
-    void onUvShellAddedToGroup(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex);
-    void onUvShellRemovedFromGroup(MeshManager::UVGroup* group, MeshData* mesh, unsigned int shellIndex);
+    void onGroupCreated(UVGroup* group);
+    void onUvShellAddedToGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
+    void onUvShellRemovedFromGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
 };
