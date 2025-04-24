@@ -35,6 +35,7 @@ public:
     UVGroup* createGroup(UVGroup* parent = nullptr);
     QList<UVGroup*> getTopLevelGroups();
     void deleteGroup(UVGroup* group);
+    void addUntrackedMeshes();
     void readdExistingGroups();
 
     QJsonDocument serializeGroupData();

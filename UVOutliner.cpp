@@ -25,6 +25,7 @@ UVOutliner::UVOutliner(QWidget* parent)
     /////////////////////////////////////////////////////////
     /// Add callbacks
     QObject::connect(ui->treeWidget, &QTreeWidget::itemSelectionChanged, this, &UVOutliner::onTreeWidgetItemSelectionChanged);
+    QObject::connect(ui->refreshButton, &QPushButton::clicked, this, &UVOutliner::onRefreshButtonClicked);
     QObject::connect(ui->groupButton, &QPushButton::clicked, this, &UVOutliner::onGroupButtonClicked);
     QObject::connect(ui->layoutAllButton, &QPushButton::clicked, this, &UVOutliner::onLayoutAllButtonClicked);
 
@@ -227,6 +228,14 @@ void UVOutliner::onTreeWidgetItemSelectionChanged()
     _isPerformingSelection = false;
 }
 
+void UVOutliner::onRefreshButtonClicked()
+{
+    //Remove everything
+    ui->treeWidget->clear();
+
+    addExistingMeshesAndGroups();
+}
+
 void UVOutliner::onGroupButtonClicked()
 {
     MGlobal::executeCommand(GroupShellsCmd::kCmdName);
@@ -256,6 +265,10 @@ void UVOutliner::onUvShellAdded(MeshData* meshData, unsigned int uvShellId)
                 break;
             }
         }
+    }
+    else
+    {
+        qDebug() << "Shell" << uvShellId << "on mesh" << meshData->getDagPath().fullPathName().asChar() << "does not belong to a gropup";
     }
 
     addItem(meshData, uvShellId, target);
@@ -417,12 +430,14 @@ void UVOutliner::addExistingMeshesAndGroups()
     MeshManager::getInst()->readdExistingGroups();
 
     for (MeshData* meshData : MeshData::getMeshData())
-    {
+    {   
         for (unsigned int i = 0; i < meshData->getNumUvShells(); i++)
         {
             onUvShellAdded(meshData, i);
         }
     }
+
+    MeshManager::getInst()->addUntrackedMeshes();
 }
 
 void UVOutliner::onSelectionChanged()

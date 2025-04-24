@@ -34,6 +34,24 @@ MeshData* MeshData::getMeshData(const MDagPath& path)
     return nullptr;
 }
 
+void MeshData::removeInvalidMeshes()
+{
+    QSet<MeshData*> invalidMeshes;
+
+    for (MeshData* data : _meshData)
+    {
+        if (!data->_dagPath.isValid() || data->_dagPath.node().isNull() || data->_dagPath.transform().isNull())
+        {
+            invalidMeshes << data;
+        }
+    }
+
+    for (MeshData* data : invalidMeshes)
+    {
+        _meshData.remove(data);
+    }
+}
+
 void MeshData::initUvShells()
 {
     //Check if the mesh has been initialized yet

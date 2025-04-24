@@ -113,10 +113,43 @@ void MeshManager::deleteGroup(UVGroup* group)
     delete group;
 }
 
+void MeshManager::addUntrackedMeshes()
+{
+    for(MItDag it(MItDag::TraversalType::kBreadthFirst, MFn::kTransform); !it.isDone(); it.next())
+    {
+        //Filter meshes
+        MDagPath path;
+        if (it.getPath(path) != MStatus::kSuccess)
+        {
+            MGlobal::displayError("Cannot get dag path for " + it.fullPathName());
+            continue;
+        }
+        if (!path.hasFn(MFn::kMesh)) continue;
+
+        //Create top level item for the mesh
+        MFnMesh mesh(path);
+
+        bool isTracked = false;
+        for (MeshData* data : MeshData::_meshData)
+        {
+            if (data->getDagPath().fullPathName() == mesh.dagPath().fullPathName())
+            {
+                isTracked = true;
+                break;
+            }
+        }
+
+        if (isTracked) continue;
+
+        addMesh(new MeshData(path));
+    }
+}
+
 void MeshManager::readdExistingGroups()
 {
     qDebug() << "Readding existing groups";
 
+    MeshData::removeInvalidMeshes();
     readdExistingGroups_impl(_groupDataRoot);
 }
 
@@ -220,7 +253,8 @@ UVGroup* MeshManager::getShellGroup_impl(MeshData* mesh, unsigned int shellindex
 
     for (UVGroup* child : root->_children)
     {
-        return getShellGroup_impl(mesh, shellindex, child);
+        UVGroup* shellGroup = getShellGroup_impl(mesh, shellindex, child);
+        if (shellGroup) return shellGroup;
     }
 
     return nullptr;
@@ -240,7 +274,6 @@ void MeshManager::removeInvalidUvShells_impl(MeshData* mesh, UVGroup* root)
 
     for (const unsigned int& invalidShellIndex : invalidShells)
     {
-        qDebug() << "Removing invalid UV shell" << invalidShellIndex << "from mesh" << mesh->getDagPath().fullPathName().asChar();
         root->removeUvShell(mesh, invalidShellIndex);
 
         emit meshUvShellRemoved(mesh, invalidShellIndex);

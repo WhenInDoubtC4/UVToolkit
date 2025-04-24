@@ -39,6 +39,8 @@ public:
     static MeshData* getMeshData(const MDagPath& path);
     static const QSet<MeshData*>& getMeshData() { return _meshData; };
 
+    static void removeInvalidMeshes();
+
     void initUvShells();
     void refreshUvShells();
     MString getMeshName() const { return _dagPath.partialPathName(); };

@@ -69,6 +69,7 @@ private:
 
 private slots:
     void onTreeWidgetItemSelectionChanged();
+    void onRefreshButtonClicked();
     void onGroupButtonClicked();
     void onLayoutAllButtonClicked();
     void onUvShellAdded(MeshData* meshData, unsigned int uvShellId);
