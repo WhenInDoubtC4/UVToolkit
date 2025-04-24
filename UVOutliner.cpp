@@ -19,6 +19,7 @@ UVOutliner::UVOutliner(QWidget* parent)
 
     ui->treeWidget->setColumnWidth(0, 200);
     ui->treeWidget->setColumnWidth(1, 30);
+    ui->treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
 
     ui->treeWidget->setItemDelegate(new UVTreeWidgetItemDelegate(ui->treeWidget));
 
@@ -28,6 +29,7 @@ UVOutliner::UVOutliner(QWidget* parent)
     QObject::connect(ui->refreshButton, &QPushButton::clicked, this, &UVOutliner::onRefreshButtonClicked);
     QObject::connect(ui->groupButton, &QPushButton::clicked, this, &UVOutliner::onGroupButtonClicked);
     QObject::connect(ui->layoutAllButton, &QPushButton::clicked, this, &UVOutliner::onLayoutAllButtonClicked);
+    QObject::connect(ui->treeWidget, &QWidget::customContextMenuRequested, this, &UVOutliner::onTreeWidgetContextMenuRequested);
 
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellAdded, this, &UVOutliner::onUvShellAdded);
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellIndexChanged, this, &UVOutliner::onUvShellIndexChanged);
@@ -244,6 +246,22 @@ void UVOutliner::onGroupButtonClicked()
 void UVOutliner::onLayoutAllButtonClicked()
 {
     MGlobal::executeCommand(LayoutAllCmd::kCmdName);
+}
+
+void UVOutliner::onTreeWidgetContextMenuRequested(const QPoint& pos)
+{
+    QMenu contextMenu(ui->treeWidget);
+
+    auto expandAllAction = new QAction("Expand all", ui->treeWidget);
+    auto collapseAllAction = new QAction("Collapse all", ui->treeWidget);
+
+    contextMenu.addAction(expandAllAction);
+    contextMenu.addAction(collapseAllAction);
+
+    QObject::connect(expandAllAction, &QAction::triggered, ui->treeWidget, &QTreeWidget::expandAll);
+    QObject::connect(collapseAllAction, &QAction::triggered, ui->treeWidget, &QTreeWidget::collapseAll);
+
+    contextMenu.exec(ui->treeWidget->mapToGlobal(pos));
 }
 
 void UVOutliner::onUvShellAdded(MeshData* meshData, unsigned int uvShellId)

@@ -5,6 +5,8 @@
 #include <QStyledItemDelegate>
 #include <QAbstractItemModel>
 #include <QPainter>
+#include <QMenu>
+#include <QAction>
 
 #include <maya/MQtUtil.h>
 #include <maya/MDagPath.h>
@@ -72,6 +74,7 @@ private slots:
     void onRefreshButtonClicked();
     void onGroupButtonClicked();
     void onLayoutAllButtonClicked();
+    void onTreeWidgetContextMenuRequested(const QPoint& pos);
     void onUvShellAdded(MeshData* meshData, unsigned int uvShellId);
     void onUvShellIndexChanged(MeshData* meshData, unsigned int oldIndex, unsigned int newIndex);
     void onUvShellRemoved(MeshData* meshData, unsigned int index);
