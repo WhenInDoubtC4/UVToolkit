@@ -23,7 +23,7 @@ public:
     void setupUi(QWidget* widget);
 
     void setGroup(UVGroup* group) { _uvGroup = group; };
-    UVGroup* getGroup() const { return _uvGroup; };
+    UVGroup* getGroup() const { return _uvGroup; }
 
 private:
     friend class GroupTreeWidgetItemEventFilter;

@@ -224,6 +224,7 @@ void UVOutliner::onTreeWidgetItemSelectionChanged()
         if (groupItem)
         {
             groupItem->setSelectionState(UVTreeWidgetItem::FullySelected, true, false);
+            selectUVShellsRecursively(groupItem);
         }
 
     }
@@ -441,6 +442,25 @@ void UVOutliner::selectUVShell(MeshData* meshData, unsigned int shellIndex, bool
     selList.add(meshDagPath, shellComponent, mergeWithExisting);
 
     MGlobal::setActiveSelectionList(selList);
+}
+
+void UVOutliner::selectUVShellsRecursively(GroupTreeWidgetItem* root)
+{
+    for (int i = 0; i < root->childCount(); i++)
+    {
+        auto uvItem = dynamic_cast<ShellTreeWidgetItem*>(root->child(i));
+
+        if (uvItem)
+        {
+            selectUVShell(uvItem->getMeshData(), uvItem->getUvShellId(), true);
+        }
+
+        auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(root->child(i));
+        if (groupItem)
+        {
+            selectUVShellsRecursively(groupItem);
+        }
+    }
 }
 
 void UVOutliner::addExistingMeshesAndGroups()

@@ -54,6 +54,7 @@ private:
     QWidget* _wrapper;
 
     void selectUVShell(MeshData* meshData, unsigned int shellIndex, bool mergeWithExisting = false);
+    void selectUVShellsRecursively(GroupTreeWidgetItem* root);
     void addExistingMeshesAndGroups();
     void reparentUvShellItem(UVGroup* group, MeshData* mesh, unsigned int shellIndex, bool addToGroup = true);
 
