@@ -11,6 +11,12 @@ constexpr char LAYOUT_UV[] = "LayoutUV";
 constexpr char DELETE_SELECTION[] = "doDelete";
 }
 
+namespace OptionVars
+{
+//1: Off, 2: 3D, 3: UV
+constexpr char SHELL_PRE_SCALING[] = "Unfold3DLayoutPreScale";
+}
+
 //FWD
 class MObject;
 class MPlug;
