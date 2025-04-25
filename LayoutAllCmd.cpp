@@ -16,8 +16,19 @@ void* LayoutAllCmd::creator()
     return new LayoutAllCmd();
 }
 
+MSyntax LayoutAllCmd::syntax()
+{
+    MSyntax syntax;
+
+    syntax.addFlag(kRecursiveFlagShortName, kRecursiveFlagName);
+
+    return syntax;
+}
+
 MStatus LayoutAllCmd::doIt(const MArgList& argList)
 {
+    MArgDatabase argData(syntax(), argList);
+
     /* Order of operations:
      * 1. Gather all top level groups
      * 2. Create selection lists for: everything, each group
@@ -73,22 +84,7 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
     ////////////////////////////////////////////////////
     ///Global layout
     MGlobal::setActiveSelectionList(globalSelection);
-    //TODO: This will do a layout based on the current settings. Might have to override this and set to preserve UV ratios
     MGlobal::executeCommand(Commands::LAYOUT_UV);
-
-    ////////////////////////////////////////////////////
-    ///Get the UV area of an arbitrary shell in each group
-    QList<double> groupUvAreas(topLevelGroups.size());
-    for (int i = 0; i < topLevelGroups.size(); i++)
-    {
-        double currentArea = topLevelGroups[i]->getUvArea();
-        if (currentArea <= 0.)
-        {
-            MGlobal::displayError("Failed to get the UV area for a group");
-            return MStatus::kFailure;
-        }
-        groupUvAreas[i] = currentArea;
-    }
 
     ////////////////////////////////////////////////////
     ///Group operations
@@ -98,36 +94,34 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
 
     for (int i = 0; i < topLevelGroups.size(); i++)
     {
-        //Layout the group only
-        //TODO: instead of running the layout command here, call the layout method on the group itself
-        MGlobal::clearSelectionList();
-        MGlobal::setActiveSelectionList(topLevelGroupSelections[i]);
-        MGlobal::executeCommand(Commands::LAYOUT_UV);
+        double scaleFactor = -.1;
+        UVGroup::AABB groupAabb;
 
-        //Scale it back down to match the UV area of it prior
-        double newArea = topLevelGroups[i]->getUvArea();
-        if (newArea <= 0.)
+        //Layout the goup only by running the group's own layout method
+        if (argData.isFlagSet(kRecursiveFlagName))
         {
-            MGlobal::displayError("Failed to get UV area for group after layout");
+            scaleFactor = topLevelGroups[i]->layoutRecursively();
+            groupAabb = topLevelGroups[i]->getAABBRecursive();
+        }
+        else
+        {
+            scaleFactor = topLevelGroups[i]->layout();
+            groupAabb = topLevelGroups[i]->getAABB();
+        }
+
+        if (scaleFactor <= 0.)
+        {
+            MGlobal::displayError("Grorup layout returned an invalid scale");
             return MStatus::kFailure;
         }
 
-        double scaleFactor = sqrt(groupUvAreas[i] / newArea);
-        proxyPlaneScales[i] = scaleFactor;
-        if (!MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyEditUV -pu 0 -pv 0 -su %1 -sv %1").arg(scaleFactor))))
-        {
-            MGlobal::displayError("Cannot scale group after layout");
-            return MStatus::kFailure;
-        }
-
-        //Create the proxy bounding plane
-        UVGroup::AABB groupAabb = topLevelGroups[i]->getAABB();
         if (!groupAabb.isValid())
         {
             MGlobal::displayError("Cannot get AABB for group");
             return MStatus::kFailure;
         }
 
+        //Create the proxy bounding plane
         MStringArray planeCommandOutput;
         if (!MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyPlane -w %1 -h %2 -sx 1 -sy 1 -createUVs 2").arg(groupAabb.xmax - groupAabb.xmin).arg(groupAabb.ymax - groupAabb.ymin)), planeCommandOutput))
         {
@@ -163,13 +157,23 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
         MGlobal::clearSelectionList();
     }
 
-    ////////////////////////////////////////////////////
-    ///Layout globally with the proxy planes
+    ///////////////////////////////////////////////////
+    //Layout globally with the proxy planes
     MSelectionList proxyGlobalSelection = globalSelection;
-    //Remove all groups
-    for (const MSelectionList& groupSelection : topLevelGroupSelections)
+    //Remove all groups from the selection
+    if (argData.isFlagSet(kRecursiveFlagName))
     {
-        proxyGlobalSelection.merge(groupSelection, MSelectionList::kRemoveFromList);
+        for (UVGroup* topLevelGroup : topLevelGroups)
+        {
+            proxyGlobalSelection.merge(topLevelGroup->getFacesRecursive(), MSelectionList::kRemoveFromList);
+        }
+    }
+    else
+    {
+        for (const MSelectionList& groupSelection : topLevelGroupSelections)
+        {
+            proxyGlobalSelection.merge(groupSelection, MSelectionList::kRemoveFromList);
+        }
     }
     //Add all proxy planes
     for (const MSelectionList& planeSelection : planeSelections)
@@ -177,6 +181,7 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
         proxyGlobalSelection.merge(planeSelection);
     }
 
+    MGlobal::clearSelectionList();
     MGlobal::setActiveSelectionList(proxyGlobalSelection);
     MGlobal::executeCommand(Commands::LAYOUT_UV);
 

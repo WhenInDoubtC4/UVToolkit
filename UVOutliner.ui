@@ -14,17 +14,17 @@
    <string>UV Outliner</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <item row="0" column="1">
-    <widget class="QPushButton" name="groupButton">
-     <property name="text">
-      <string>Group selection</string>
-     </property>
-    </widget>
-   </item>
    <item row="0" column="0">
     <widget class="QPushButton" name="refreshButton">
      <property name="text">
       <string>Refresh</string>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QPushButton" name="groupButton">
+     <property name="text">
+      <string>Group selection</string>
      </property>
     </widget>
    </item>
@@ -46,10 +46,17 @@
      </column>
     </widget>
    </item>
-   <item row="2" column="0" colspan="2">
+   <item row="2" column="0">
     <widget class="QPushButton" name="layoutAllButton">
      <property name="text">
       <string>Layout all</string>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QPushButton" name="recursiveLayoutAllButton">
+     <property name="text">
+      <string>Layout all recursively</string>
      </property>
     </widget>
    </item>

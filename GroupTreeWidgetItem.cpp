@@ -98,5 +98,10 @@ void GroupTreeWidgetItemEventFilter::onCustomContextMenuRequested(const QPoint& 
         _parent->getGroup()->layout();
     });
 
+    QObject::connect(recursiveLayoutAction, &QAction::triggered, this, [=]()
+    {
+        _parent->getGroup()->layoutRecursively();
+    });
+
     contextMenu.exec(_widget->mapToGlobal(pos));
 }

@@ -39,8 +39,12 @@ public:
     const QSet<UVGroup*>& getChildren() const { return _children; };
 
     AABB getAABB() const;
+    AABB getAABBRecursive() const;
+    MSelectionList getFaces() const;
+    MSelectionList getFacesRecursive() const;
     double getUvArea();
-    void layout();
+    double layout();
+    double layoutRecursively();
 
 private:
     friend class MeshManager;

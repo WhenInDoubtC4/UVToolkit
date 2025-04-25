@@ -29,6 +29,7 @@ UVOutliner::UVOutliner(QWidget* parent)
     QObject::connect(ui->refreshButton, &QPushButton::clicked, this, &UVOutliner::onRefreshButtonClicked);
     QObject::connect(ui->groupButton, &QPushButton::clicked, this, &UVOutliner::onGroupButtonClicked);
     QObject::connect(ui->layoutAllButton, &QPushButton::clicked, this, &UVOutliner::onLayoutAllButtonClicked);
+    QObject::connect(ui->recursiveLayoutAllButton, &QPushButton::clicked, this, &UVOutliner::onRecursiveLayoutAllButtonClicked);
     QObject::connect(ui->treeWidget, &QWidget::customContextMenuRequested, this, &UVOutliner::onTreeWidgetContextMenuRequested);
 
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellAdded, this, &UVOutliner::onUvShellAdded);
@@ -247,6 +248,11 @@ void UVOutliner::onGroupButtonClicked()
 void UVOutliner::onLayoutAllButtonClicked()
 {
     MGlobal::executeCommand(LayoutAllCmd::kCmdName);
+}
+
+void UVOutliner::onRecursiveLayoutAllButtonClicked()
+{
+    MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("%1 %2").arg(LayoutAllCmd::kCmdName).arg(LayoutAllCmd::kRecursiveFlagName)));
 }
 
 void UVOutliner::onTreeWidgetContextMenuRequested(const QPoint& pos)

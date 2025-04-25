@@ -75,6 +75,7 @@ private slots:
     void onRefreshButtonClicked();
     void onGroupButtonClicked();
     void onLayoutAllButtonClicked();
+    void onRecursiveLayoutAllButtonClicked();
     void onTreeWidgetContextMenuRequested(const QPoint& pos);
     void onUvShellAdded(MeshData* meshData, unsigned int uvShellId);
     void onUvShellIndexChanged(MeshData* meshData, unsigned int oldIndex, unsigned int newIndex);
