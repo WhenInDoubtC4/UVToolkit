@@ -7,6 +7,8 @@
 #include <QMouseEvent>
 
 #include <maya/MQtUtil.h>
+#include <maya/MGlobal.h>
+#include <maya/M3dView.h>
 
 namespace Ui {
 class UVEditorOverlayWindow;

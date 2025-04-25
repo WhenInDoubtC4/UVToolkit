@@ -30,38 +30,6 @@ MStatus EditUVEditorWindowCmd::doIt(const MArgList& argList)
     QWidget* uvEditorWidget = MQtUtil::findControl("polyTexturePlacementPanel1");
     uvEditorWidget->dumpObjectTree();
 
-    //////////////////////////////////////
-    /// works but not transparent
-    // auto wrapperWidget = new QWidget(uvEditorWidget);
-    // wrapperWidget->setLayout(uvEditorWidget->layout());
-
-    // uvEditorWidget->setLayout(new QVBoxLayout(uvEditorWidget));
-
-    // auto stackedLayout_widget = new QWidget(uvEditorWidget);
-    // auto stackedLayout = new QStackedLayout(stackedLayout_widget);
-
-    // //Make this a hidden proxy widget??
-
-
-    // auto proxyWidget = new ProxyWidget(stackedLayout_widget);
-    // //test->move(300, 300);
-
-    // stackedLayout->addWidget(proxyWidget);
-    // stackedLayout->addWidget(wrapperWidget);
-    // stackedLayout->setStackingMode(QStackedLayout::StackAll);
-
-    // stackedLayout_widget->setLayout(stackedLayout);
-
-    // MQtUtil::addWidgetToMayaLayout(stackedLayout_widget, uvEditorWidget);
-
-    // proxyWidget->hide();
-
-    // uvEditorWidget->dumpObjectTree();
-    ///////////////////////////////
-
-    ////////////////////////////////////////
-    /// \brief THING THAT WORKS!!!!
-    //////////////////////////////////////////
     QWidget* uvEditorWindow = MQtUtil::findWindow("polyTexturePlacementPanel1Window");
 
     auto stackedWidget = uvEditorWindow->findChildren<QStackedWidget*>().last();
@@ -77,7 +45,6 @@ MStatus EditUVEditorWindowCmd::doIt(const MArgList& argList)
     mdiArea->raise();
 
     auto eventFilter = new OverlayEventFilter(stackedWidget, mdiArea);
-    ///////////////////////////////////////////////////
 
     return MStatus::kSuccess;
 }

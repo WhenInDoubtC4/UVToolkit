@@ -14,8 +14,8 @@
 #include <maya/MEventMessage.h>
 #include <maya/MSceneMessage.h>
 
-MCallbackId uvEditorOpenCallbackId;
-MCallbackId uvEditorCloseCallbackId;
+// MCallbackId uvEditorOpenCallbackId;
+// MCallbackId uvEditorCloseCallbackId;
 MCallbackId afterPluginLoadedCallbackId;
 MCallbackId beforePluginUnloadedCallbackId;
 
@@ -48,17 +48,17 @@ MStatus initializePlugin( MObject obj )
     // script.setGlobal("TEST1", 69);
     // script.setGlobal("TEST2", true);
 
-    uvEditorOpenCallbackId = MEventMessage::addEventCallback("texWindowEditorShowup", [](void* data)
-    {
-        MGlobal::displayInfo("UV editor opened!!");
+    // uvEditorOpenCallbackId = MEventMessage::addEventCallback("texWindowEditorShowup", [](void* data)
+    // {
+    //     MGlobal::displayInfo("UV editor opened!!");
 
-        MGlobal::executeCommand(EditUVEditorWindowCmd::kCmdName, true);
-    });
+    //     MGlobal::executeCommand(EditUVEditorWindowCmd::kCmdName, true);
+    // });
 
-    uvEditorCloseCallbackId = MEventMessage::addEventCallback("texWindowEditorClose", [](void* data)
-    {
-        MGlobal::displayWarning("UV editor closed!!");
-    });
+    // uvEditorCloseCallbackId = MEventMessage::addEventCallback("texWindowEditorClose", [](void* data)
+    // {
+    //     MGlobal::displayWarning("UV editor closed!!");
+    // });
 
     //Init an uninit mesh manager here so that it doesn't cause a race condition when
     afterPluginLoadedCallbackId = MSceneMessage::addStringArrayCallback(MSceneMessage::kAfterPluginLoad, [](const MStringArray& strs, void* clientData)
@@ -100,8 +100,8 @@ MStatus uninitializePlugin( MObject obj )
     plugin.deregisterCommand(GroupShellsCmd::kCmdName);
     plugin.deregisterCommand(LayoutAllCmd::kCmdName);
 
-    MMessage::removeCallback(uvEditorOpenCallbackId);
-    MMessage::removeCallback(uvEditorCloseCallbackId);
+    // MMessage::removeCallback(uvEditorOpenCallbackId);
+    // MMessage::removeCallback(uvEditorCloseCallbackId);
     MMessage::removeCallback(afterPluginLoadedCallbackId);
     MMessage::removeCallback(beforePluginUnloadedCallbackId);
 
