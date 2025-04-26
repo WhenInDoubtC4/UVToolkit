@@ -27,4 +27,14 @@ public:
 
     inline static const char kNameArgName[] = "-name";
     inline static const char kNameArgShortName[] = "-n";
+
+    inline static const char kSerializeFlagName[] = "-serialize";
+    inline static const char kSerializeFlagShortName[] = "-s";
+
+    inline static const char kDeserializeFlagName[] = "-deserialize";
+    inline static const char kDeserializeFlagShortName[] = "-d";
+
+private:
+    MStatus serializeGroupData();
+    MStatus deserializeGroupData();
 };

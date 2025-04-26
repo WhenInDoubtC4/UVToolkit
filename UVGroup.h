@@ -53,6 +53,6 @@ private:
     long long _id = 0;
     QString _name;
     QList<QPair<MDagPath, unsigned int>> _shells;
-    UVGroup* _parent;
+    UVGroup* _parent = nullptr;
     QSet<UVGroup*> _children;
 };

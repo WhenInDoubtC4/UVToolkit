@@ -92,6 +92,67 @@ UVGroup* MeshManager::createGroup(UVGroup* parent)
     return result;
 }
 
+UVGroup* MeshManager::createGroupFromJsonRecursive(const QJsonObject& jsonObject)
+{
+    auto result = new UVGroup();
+
+    result->_id = jsonObject["id"].toInteger();
+
+    //Make sure groups created after will have proper IDs
+    _nextGroupId = std::max(_nextGroupId, result->_id);
+
+    result->_name = jsonObject["name"].toString();
+
+    QJsonArray shellArray = jsonObject["shells"].toArray();
+    for (const QJsonValue& shellValue : shellArray)
+    {
+        QJsonObject shell = shellValue.toObject();
+
+        QString dagPathName = shell["path"].toString();
+        unsigned int shellIndex = shell["shell"].toInteger();
+
+        MSelectionList meshSelection;
+        meshSelection.add(MQtUtil::toMString(dagPathName));
+
+        MDagPath path;
+        if (!meshSelection.getDagPath(0, path))
+        {
+            qDebug() << "Failed to deserialize path name" << dagPathName;
+            continue;
+        }
+
+        qDebug() << "Deserialized shell" << path.fullPathName().asChar() << shellIndex << "for group" << result->_id;
+        result->_shells << qMakePair(path, shellIndex);
+    }
+
+    long long parentIndex = jsonObject["parent"].toInteger();
+
+    UVGroup* parentGroup = findGroupWithId(parentIndex, _groupDataRoot);
+    if (!parentGroup)
+    {
+        qDebug() << "Could not find parent group with index" << parentIndex;
+    }
+    result->_parent = parentGroup;
+
+    //The root item
+    if (parentIndex < 0)
+    {
+        _groupDataRoot = result;
+    }
+
+    QJsonArray childArray = jsonObject["children"].toArray();
+    for (const QJsonValue& childValue : childArray)
+    {
+        QJsonObject childObject = childValue.toObject();
+        UVGroup* childGroup = createGroupFromJsonRecursive(childObject);
+        if (childGroup) result->_children << childGroup;
+    }
+
+    emit groupCreated(result);
+
+    return result;
+}
+
 QList<UVGroup*> MeshManager::getTopLevelGroups()
 {
     QList<UVGroup*> result;
@@ -185,31 +246,38 @@ void MeshManager::removeInvalidUvShells(MeshData* mesh)
 
 MObject MeshManager::getGroupDataNode()
 {
-    MObject result;
-
-    //Find the group data node or create it
-    MSelectionList selList;
-    selList.add(GroupDataNode::typeName);
-
-    //Node already exists
-    if (!selList.isEmpty())
+    for (MItDependencyNodes it(MFn::kPluginDependNode); !it.isDone(); it.next())
     {
-        qDebug() << "Group data node already exists";
-        selList.getDependNode(0, result);
-        return result;
+        MFnDependencyNode node(it.thisNode());
+        if (node.typeName() != GroupDataNode::typeName) continue;
+
+        return it.thisNode();
     }
 
     qDebug() << "Creating group data node";
+    MObject newNode;
 
     //Create the ndde
     MDGModifier dgModifier;
-    result = dgModifier.createNode(GroupDataNode::typeName);
+    newNode = dgModifier.createNode(GroupDataNode::typeName);
     dgModifier.doIt();
 
-    MFnDependencyNode depNode(result);
+    MFnDependencyNode depNode(newNode);
     depNode.setName("UVGroupData#");
 
-    return result;
+    return newNode;
+}
+
+UVGroup* MeshManager::findGroupWithId(long long id, UVGroup* root)
+{
+    if (root->_id) return root;
+
+    for (UVGroup* childGroup : root->_children)
+    {
+        findGroupWithId(id, childGroup);
+    }
+
+    return nullptr;
 }
 
 void MeshManager::gatherExistingMeshes()

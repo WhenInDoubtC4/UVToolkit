@@ -12,6 +12,7 @@
 #include <maya/MFnDependencyNode.h>
 #include <maya/MGlobal.h>
 #include <maya/MItDag.h>
+#include <maya/MItDependencyNodes.h>
 
 #include "MeshData.h"
 #include "UVGroup.h"
@@ -33,12 +34,14 @@ public:
 
     UVGroup* getRootGroup() const { return _groupDataRoot; };
     UVGroup* createGroup(UVGroup* parent = nullptr);
+    UVGroup* createGroupFromJsonRecursive(const QJsonObject& jsonObject);
     QList<UVGroup*> getTopLevelGroups();
     void deleteGroup(UVGroup* group);
     void addUntrackedMeshes();
     void readdExistingGroups();
 
     QJsonDocument serializeGroupData();
+    MObject getGroupDataNode();
 
     UVGroup* getShellGroup(MeshData* mesh, unsigned int shellindex) const;
     void removeInvalidUvShells(MeshData* mesh);
@@ -62,7 +65,7 @@ private:
     UVGroup* _groupDataRoot = nullptr;
     inline static long long _nextGroupId = 0;
 
-    MObject getGroupDataNode();
+    UVGroup* findGroupWithId(long long id, UVGroup* root);
     void gatherExistingMeshes();
     void clearGroupData(UVGroup* root);
     UVGroup* getShellGroup_impl(MeshData* mesh, unsigned int shellindex, UVGroup* root) const;

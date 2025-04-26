@@ -18,6 +18,10 @@
 // MCallbackId uvEditorCloseCallbackId;
 MCallbackId afterPluginLoadedCallbackId;
 MCallbackId beforePluginUnloadedCallbackId;
+MCallbackId beforeSaveCallbackId;
+MCallbackId afterOpenCallbackId;
+
+bool isPluginBeingUnloaded = false;
 
 //Reroute qDebug() to stdout
 void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QString &msg)
@@ -28,6 +32,8 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
 
 MStatus initializePlugin( MObject obj )
 {
+    isPluginBeingUnloaded = false;
+
     MFnPlugin plugin(obj, "Adam Gyenes", "1.0", "Any");
 
     qInstallMessageHandler(myMessageOutput);
@@ -81,6 +87,19 @@ MStatus initializePlugin( MObject obj )
         MeshManager::cleanup();
     });
 
+    beforeSaveCallbackId = MSceneMessage::addCallback(MSceneMessage::kBeforeSave, [](void* clientData)
+    {
+        if (isPluginBeingUnloaded) return;
+        //Serialize the group data
+        MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("%1 %2").arg(GroupShellsCmd::kCmdName).arg(GroupShellsCmd::kSerializeFlagName)));
+    });
+
+    afterOpenCallbackId = MSceneMessage::addCallback(MSceneMessage::kAfterOpen, [](void* clientData)
+    {
+        //Deserialize group data
+        MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("%1 %2").arg(GroupShellsCmd::kCmdName).arg(GroupShellsCmd::kDeserializeFlagName)));
+    });
+
     int result;
     MGlobal::executeCommand("workspaceControl -q -exists polyTexturePlacementPanel1Window", result);
     qDebug() << "REsult is " << result;
@@ -90,6 +109,8 @@ MStatus initializePlugin( MObject obj )
 
 MStatus uninitializePlugin( MObject obj )
 {
+    isPluginBeingUnloaded = true;
+
     MFnPlugin plugin(obj);
 
     plugin.deregisterNode(GroupDataNode::typeId);
@@ -104,6 +125,8 @@ MStatus uninitializePlugin( MObject obj )
     // MMessage::removeCallback(uvEditorCloseCallbackId);
     MMessage::removeCallback(afterPluginLoadedCallbackId);
     MMessage::removeCallback(beforePluginUnloadedCallbackId);
+    MMessage::removeCallback(beforeSaveCallbackId);
+    MMessage::removeCallback(afterOpenCallbackId);
 
     MayaQWidgetDockableMixin::cleanup();
     MainWindowCmd::cleanup();

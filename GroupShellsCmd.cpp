@@ -16,6 +16,8 @@ MSyntax GroupShellsCmd::syntax()
     MSyntax syntax;
 
     syntax.addFlag(kNameArgShortName, kNameArgName, MSyntax::kString);
+    syntax.addFlag(kSerializeFlagShortName, kSerializeFlagName);
+    syntax.addFlag(kDeserializeFlagShortName, kDeserializeFlagName);
 
     return syntax;
 }
@@ -23,6 +25,18 @@ MSyntax GroupShellsCmd::syntax()
 MStatus GroupShellsCmd::doIt(const MArgList& argList)
 {
     MArgDatabase argData(syntax(), argList);
+
+    if (argData.isFlagSet(kSerializeFlagName))
+    {
+        return serializeGroupData();
+    }
+    else if (argData.isFlagSet(kDeserializeFlagName))
+    {
+        return deserializeGroupData();
+    }
+
+    /////////////////////////////////////////////////////
+    /// Grouping
 
     MSelectionList currentSelection;
     MGlobal::getActiveSelectionList(currentSelection);
@@ -148,6 +162,56 @@ MStatus GroupShellsCmd::doIt(const MArgList& argList)
     }
 
     //qDebug() << QString::fromUtf8(MeshManager::getInst()->serializeGroupData().toJson(QJsonDocument::Compact));
+
+    return MStatus::kSuccess;
+}
+
+MStatus GroupShellsCmd::serializeGroupData()
+{
+    qDebug() << "Serializing";
+
+    QJsonDocument groupDataJson = MeshManager::getInst()->serializeGroupData();
+    if (groupDataJson.isEmpty() || groupDataJson.isNull())
+    {
+        MGlobal::displayError("Failed to serialize group data");
+        return MStatus::kFailure;
+    }
+
+    MString serializedData = groupDataJson.toJson(QJsonDocument::Compact).constData();
+    qDebug() << groupDataJson.toJson(QJsonDocument::Compact);
+
+
+    MObject dataNode = MeshManager::getInst()->getGroupDataNode();
+    MFnDependencyNode depNode(dataNode);
+    MPlug attribute = depNode.findPlug(GroupDataNode::kAttributeName, false);
+    attribute.setValue(serializedData);
+
+    return MStatus::kSuccess;
+}
+
+MStatus GroupShellsCmd::deserializeGroupData()
+{
+    qDebug() << "Deserializing";
+
+    MObject dataNode = MeshManager::getInst()->getGroupDataNode();
+    MFnDependencyNode depNode(dataNode);
+    MPlug attribute = depNode.findPlug(GroupDataNode::kAttributeName, false);
+
+    MString serializedData;
+    attribute.getValue(serializedData);
+    qDebug() << "Attribute value:" << serializedData.asChar();
+
+    QJsonDocument groupJson = QJsonDocument::fromJson(MQtUtil::toQString(serializedData).toUtf8());
+    if (groupJson.isNull() || groupJson.isEmpty())
+    {
+        MGlobal::displayError("Invalid json group data");
+        return MStatus::kFailure;
+    }
+
+    //Make sure mesh data is up to date before creating the groups
+    MeshManager::getInst()->addUntrackedMeshes();
+
+    MeshManager::getInst()->createGroupFromJsonRecursive(groupJson.object());
 
     return MStatus::kSuccess;
 }

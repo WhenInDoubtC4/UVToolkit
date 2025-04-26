@@ -21,11 +21,20 @@ QJsonObject UVGroup::serialize()
 
     result["shells"] = shellArray;
     //Do this because of the root
-    result["parent"] = _parent ? static_cast<qint64>(_parent->_id) : -1;
+    if (_parent)
+    {
+        result["parent"] = static_cast<qint64>(_parent->_id);
+    }
+    else
+    {
+        result["parent"] = -1;
+    }
 
     QJsonArray childArray;
     for (UVGroup* childGroup : _children)
     {
+        if (!childGroup) continue;
+
         childArray << childGroup->serialize();
     }
 
