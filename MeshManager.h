@@ -52,6 +52,7 @@ signals:
     void meshUvShellRemoved(MeshData* mesh, unsigned int index);
     void meshUvDataRefreshed(MeshData* mesh);
     void groupCreated(UVGroup* group);
+    void groupDeleted(UVGroup* group);
     void uvShellAddedToGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
     void uvShellRemovedFromGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
 

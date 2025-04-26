@@ -169,7 +169,13 @@ void MeshManager::deleteGroup(UVGroup* group)
 {
     group->_parent->_children.remove(group);
 
-    for (UVGroup* childGroup : group->_children) group->_parent->_children << childGroup;
+    for (UVGroup* childGroup : group->_children)
+    {
+        childGroup->_parent = group->_parent;
+        group->_parent->_children << childGroup;
+    }
+
+    emit groupDeleted(group);
 
     delete group;
 }

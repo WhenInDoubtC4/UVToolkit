@@ -57,6 +57,7 @@ private:
     void selectUVShellsRecursively(GroupTreeWidgetItem* root);
     void addExistingMeshesAndGroups();
     void reparentUvShellItem(UVGroup* group, MeshData* mesh, unsigned int shellIndex, bool addToGroup = true);
+    void recreateShellWrapeprWidgetsRecursive(GroupTreeWidgetItem* root);
 
     inline static bool _isPerformingSelection = false;
 
@@ -82,6 +83,7 @@ private slots:
     void onUvShellRemoved(MeshData* meshData, unsigned int index);
     void onUvDataRefreshed(MeshData* mesh);
     void onGroupCreated(UVGroup* group);
+    void onGroupDeleted(UVGroup* group);
     void onUvShellAddedToGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
     void onUvShellRemovedFromGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
 };

@@ -103,5 +103,10 @@ void GroupTreeWidgetItemEventFilter::onCustomContextMenuRequested(const QPoint& 
         _parent->getGroup()->layoutRecursively();
     });
 
+    QObject::connect(deleteAction, &QAction::triggered, this, [=]()
+    {
+        MeshManager::getInst()->deleteGroup(_parent->getGroup());
+    });
+
     contextMenu.exec(_widget->mapToGlobal(pos));
 }

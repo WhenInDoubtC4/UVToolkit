@@ -37,6 +37,7 @@ UVOutliner::UVOutliner(QWidget* parent)
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellRemoved, this, &UVOutliner::onUvShellRemoved);
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvDataRefreshed, this, &UVOutliner::onUvDataRefreshed);
     QObject::connect(MeshManager::getInst(), &MeshManager::groupCreated, this, &UVOutliner::onGroupCreated);
+    QObject::connect(MeshManager::getInst(), &MeshManager::groupDeleted, this, &UVOutliner::onGroupDeleted);
     QObject::connect(MeshManager::getInst(), &MeshManager::uvShellAddedToGroup, this, &UVOutliner::onUvShellAddedToGroup);
     QObject::connect(MeshManager::getInst(), &MeshManager::uvShellRemovedFromGroup, this, &UVOutliner::onUvShellRemovedFromGroup);
 
@@ -349,6 +350,107 @@ void UVOutliner::onGroupCreated(UVGroup* group)
         }
 
         addItem(group, item);
+    }
+}
+
+void UVOutliner::onGroupDeleted(UVGroup* group)
+{
+    //Figure out which item the group belonged to
+    for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+    {
+        auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(*it);
+        if (!groupItem) continue;
+
+        if (groupItem->getGroup() != group) continue;
+
+        QSet<ShellTreeWidgetItem*> childShells;
+        QSet<GroupTreeWidgetItem*> childGroups;
+        for (int i = 0; i < groupItem->childCount(); i++)
+        {
+            QTreeWidgetItem* childItem = groupItem->child(i);
+
+            if (auto childShell = dynamic_cast<ShellTreeWidgetItem*>(childItem); childShell)
+            {
+                childShells << childShell;
+            }
+            else if (auto childGroup = dynamic_cast<GroupTreeWidgetItem*>(childItem); childGroup)
+            {
+                childGroups << childGroup;
+            }
+        }
+
+        //All child UV shells are reparented to the world
+        for (ShellTreeWidgetItem* uvItem : childShells)
+        {
+            groupItem->removeChild(uvItem);
+            ui->treeWidget->addTopLevelItem(uvItem);
+
+            //Recreate the wrapper widget
+            auto wrapper = new QWidget(ui->treeWidget);
+            wrapper->setContentsMargins(0, 0, 0, 0);
+            uvItem->setupUi(wrapper);
+
+            ui->treeWidget->setItemWidget(uvItem, 0, wrapper);
+        }
+
+        //All chuld child  are reparented to the parent group, or the world
+        for (GroupTreeWidgetItem* childGroup : childGroups)
+        {
+            groupItem->removeChild(childGroup);
+
+            if (groupItem->parent())
+            {
+                groupItem->parent()->addChild(childGroup);
+            }
+            else
+            {
+                ui->treeWidget->addTopLevelItem(childGroup);
+            }
+
+            //Recreate the wrapper widget
+            auto wrapper = new QWidget(ui->treeWidget);
+            wrapper->setContentsMargins(0, 0, 0, 0);
+            childGroup->setupUi(wrapper);
+
+            ui->treeWidget->setItemWidget(childGroup, 0, wrapper);
+
+            //Recreate the wrapper widgets for all children
+            recreateShellWrapeprWidgetsRecursive(childGroup);
+        }
+
+        //Remove the group item
+        if (groupItem->parent())
+        {
+            groupItem->parent()->removeChild(groupItem);
+        }
+        else
+        {
+            int itemIndex = ui->treeWidget->indexOfTopLevelItem(groupItem);
+            ui->treeWidget->takeTopLevelItem(itemIndex);
+        }
+
+        break;
+    }
+}
+
+void UVOutliner::recreateShellWrapeprWidgetsRecursive(GroupTreeWidgetItem* root)
+{
+    for (int i = 0; i < root->childCount(); i++)
+    {
+        QTreeWidgetItem* childItem = root->child(i);
+
+        if (auto uvItem = dynamic_cast<ShellTreeWidgetItem*>(childItem); uvItem)
+        {
+            auto wrapper = new QWidget(ui->treeWidget);
+            wrapper->setContentsMargins(0, 0, 0, 0);
+            uvItem->setupUi(wrapper);
+
+            ui->treeWidget->setItemWidget(uvItem, 0, wrapper);
+        }
+        else if (auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(childItem); groupItem)
+        {
+            recreateShellWrapeprWidgetsRecursive(groupItem);
+        }
     }
 }
 
