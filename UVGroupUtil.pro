@@ -1,7 +1,7 @@
 QT += core gui widgets
 
 TEMPLATE = lib
-DEFINES += TESTPLUGIN5_LIBRARY
+DEFINES += UVGROUPUTIL_LIBRARY
 
 CONFIG += c++17
 CONFIG += qt warn_on release plugin
@@ -25,7 +25,7 @@ QMAKE_CFLAGS += $${_CFLAGS}
 QMAKE_CXXFLAGS += $${_CFLAGS}
 TARGET_EXT = .mll
 
-TARGET = TestPlugin5
+TARGET = UVGroupUtil
 DEFINES += PROJECT_NAME=\\\"$${TARGET}\\\"
 
 #Copy .mll to the plugins folder
@@ -47,7 +47,7 @@ SOURCES += \
     MeshManager.cpp \
     PyScript.cpp \
     ShellTreeWidgetItem.cpp \
-    TestPlugin5.cpp \
+    Plugin.cpp \
     UVEditorOverlayWindow.cpp \
     UVGroup.cpp \
     UVOutliner.cpp \
