@@ -236,11 +236,19 @@ void UVGroup::removeUvShell(MeshData* mesh, unsigned int shellIndex)
 
 void UVGroup::move(UVGroup* target)
 {
-    if (!target) return;
-
     _parent->_children.remove(this);
-    _parent = target;
-    target->_children << this;
+
+    if (target)
+    {
+        _parent = target;
+        target->_children << this;
+    }
+    else
+    {
+        UVGroup* root = MeshManager::getInst()->getRootGroup();
+        _parent = root;
+        root->_children << this;
+    }
 
     emit MeshManager::getInst()->groupMoved(this, target);
 }

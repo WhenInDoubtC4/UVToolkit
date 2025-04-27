@@ -476,17 +476,20 @@ void UVOutliner::onUvShellRemovedFromGroup(UVGroup* group, MeshData* mesh, unsig
 
 void UVOutliner::onGroupMoved(UVGroup* group, UVGroup* target)
 {
-    //Find which tree widget item corresponds to the target
     GroupTreeWidgetItem* targetItem = nullptr;
-    for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+    if (target)
     {
-        auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(*it);
-        if (!groupItem) continue;
-
-        if (groupItem->getGroup() == target)
+        //Find which tree widget item corresponds to the target
+        for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
         {
-            targetItem = groupItem;
-            break;
+            auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(*it);
+            if (!groupItem) continue;
+
+            if (groupItem->getGroup() == target)
+            {
+                targetItem = groupItem;
+                break;
+            }
         }
     }
 
@@ -506,7 +509,14 @@ void UVOutliner::onGroupMoved(UVGroup* group, UVGroup* target)
             ui->treeWidget->takeTopLevelItem(itemIndex);
         }
 
-        targetItem->addChild(groupItem);
+        if (targetItem)
+        {
+            targetItem->addChild(groupItem);
+        }
+        else
+        {
+            ui->treeWidget->addTopLevelItem(groupItem);
+        }
         ui->treeWidget->recreateWidgetsRecursive(groupItem);
 
         break;

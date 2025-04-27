@@ -209,12 +209,16 @@ void GroupTreeWidgetItemEventFilter::onCustomContextMenuRequested(const QPoint& 
 
     auto layoutAction = new QAction("Layout", _widget);
     auto recursiveLayoutAction = new QAction("Layout recursively", _widget);
+    auto unparentAction = new QAction("Unparent", _widget);
     auto deleteAction = new QAction("Delete", _widget);
 
     contextMenu.addAction(layoutAction);
     contextMenu.addAction(recursiveLayoutAction);
     contextMenu.addSeparator();
+    contextMenu.addAction(unparentAction);
     contextMenu.addAction(deleteAction);
+
+    unparentAction->setEnabled(_parent->getGroup()->getParent() != MeshManager::getInst()->getRootGroup());
 
     QObject::connect(layoutAction, &QAction::triggered, this, [=]()
     {
@@ -225,6 +229,11 @@ void GroupTreeWidgetItemEventFilter::onCustomContextMenuRequested(const QPoint& 
     QObject::connect(recursiveLayoutAction, &QAction::triggered, this, [=]()
     {
         _parent->getGroup()->layoutRecursively();
+    });
+
+    QObject::connect(unparentAction, &QAction::triggered, this, [=]()
+    {
+        _parent->getGroup()->move(nullptr);
     });
 
     QObject::connect(deleteAction, &QAction::triggered, this, [=]()
