@@ -5,8 +5,6 @@
 #include <QStyledItemDelegate>
 #include <QAbstractItemModel>
 #include <QPainter>
-#include <QMenu>
-#include <QAction>
 
 #include <maya/MQtUtil.h>
 #include <maya/MDagPath.h>
@@ -57,7 +55,6 @@ private:
     void selectUVShellsRecursively(GroupTreeWidgetItem* root);
     void addExistingMeshesAndGroups();
     void reparentUvShellItem(UVGroup* group, MeshData* mesh, unsigned int shellIndex, bool addToGroup = true);
-    void recreateShellWrapeprWidgetsRecursive(GroupTreeWidgetItem* root);
 
     inline static bool _isPerformingSelection = false;
 
@@ -77,7 +74,6 @@ private slots:
     void onGroupButtonClicked();
     void onLayoutAllButtonClicked();
     void onRecursiveLayoutAllButtonClicked();
-    void onTreeWidgetContextMenuRequested(const QPoint& pos);
     void onUvShellAdded(MeshData* meshData, unsigned int uvShellId);
     void onUvShellIndexChanged(MeshData* meshData, unsigned int oldIndex, unsigned int newIndex);
     void onUvShellRemoved(MeshData* meshData, unsigned int index);
@@ -86,4 +82,5 @@ private slots:
     void onGroupDeleted(UVGroup* group);
     void onUvShellAddedToGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
     void onUvShellRemovedFromGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
+    void onGroupMoved(UVGroup* group, UVGroup* target);
 };

@@ -29,7 +29,7 @@
     </widget>
    </item>
    <item row="1" column="0" colspan="2">
-    <widget class="QTreeWidget" name="treeWidget">
+    <widget class="UVTreeWidget" name="treeWidget">
      <property name="selectionMode">
       <enum>QAbstractItemView::ExtendedSelection</enum>
      </property>
@@ -62,6 +62,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>UVTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>UVTreeWidget.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -46,6 +46,20 @@ void UVTreeWidgetItem::setSelectionState(const SelectionState& state, bool propa
     }
 }
 
+void UVTreeWidgetItem::setupDragAndDrop(QWidget* widget, QWidget* dragHandle)
+{
+    widget->setAcceptDrops(true);
+    widget->installEventFilter(new UVTreeWidgetItemEventFilter(this, widget, dragHandle));
+}
+
+void UVTreeWidgetItem::setupWrapperWidget(QTreeWidget* parent)
+{
+    auto wrapper = new QWidget(parent);
+    wrapper->setContentsMargins(0, 0, 0, 0);
+    setupUi(wrapper);
+    parent->setItemWidget(this, 0, wrapper);
+}
+
 UVTreeWidgetItemDelegate::UVTreeWidgetItemDelegate(QObject* parent)
     : QStyledItemDelegate(parent)
 {
@@ -99,4 +113,47 @@ void UVTreeWidgetItemDelegate::paint(QPainter* painter, const QStyleOptionViewIt
         painter->drawRect(opt.rect.adjusted(1, 1, -1, -1));
         painter->restore();
     }
+}
+
+UVTreeWidgetItemEventFilter::UVTreeWidgetItemEventFilter(UVTreeWidgetItem* parent, QWidget* widget, QWidget* dragHandle)
+    : QObject(widget),
+    _parent(parent),
+    _dragHandle(dragHandle)
+{
+
+}
+
+bool UVTreeWidgetItemEventFilter::eventFilter(QObject* watched, QEvent* event)
+{
+    auto mouseEvent = dynamic_cast<QMouseEvent*>(event);
+
+    if (event->type() == QEvent::MouseButtonRelease)
+    {
+        _handlePressed = false;
+        _dragStarted = false;
+        return false;
+    }
+    else if (event->type() == QEvent::MouseMove)
+    {
+        if (_handlePressed && !_dragStarted && (_dragStartPosition - mouseEvent->pos()).manhattanLength() >= QApplication::startDragDistance())
+        {
+            _dragStarted = true;
+
+            QDrag* drag = _parent->onDrag();
+            if (!drag) return false;
+
+            drag->exec(Qt::MoveAction);
+        }
+
+        return _handlePressed;
+    }
+    else if (event->type() == QEvent::MouseButtonPress)
+    {
+        if (!_dragHandle->geometry().contains(mouseEvent->pos())) return false;
+
+        _handlePressed = true;
+        _dragStartPosition = mouseEvent->pos();
+    }
+
+    return false;
 }

@@ -234,6 +234,17 @@ void UVGroup::removeUvShell(MeshData* mesh, unsigned int shellIndex)
     emit MeshManager::getInst()->uvShellRemovedFromGroup(this, mesh, shellIndex);
 }
 
+void UVGroup::move(UVGroup* target)
+{
+    if (!target) return;
+
+    _parent->_children.remove(this);
+    _parent = target;
+    target->_children << this;
+
+    emit MeshManager::getInst()->groupMoved(this, target);
+}
+
 QJsonDocument MeshManager::serializeGroupData()
 {
     QJsonObject rootObject = _groupDataRoot->serialize();

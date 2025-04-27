@@ -17,6 +17,12 @@ namespace OptionVars
 constexpr char SHELL_PRE_SCALING[] = "Unfold3DLayoutPreScale";
 }
 
+namespace MimeTypes
+{
+constexpr char SHELL_TREE_WIDGET_ITEM[] = "binary/shellTreeWidgetItem";
+constexpr char GROUP_TREE_WIDGET_ITEM[] = "binary/groupTreeWidgetItem";
+}
+
 //FWD
 class MObject;
 class MPlug;

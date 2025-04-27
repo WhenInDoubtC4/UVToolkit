@@ -30,7 +30,6 @@ UVOutliner::UVOutliner(QWidget* parent)
     QObject::connect(ui->groupButton, &QPushButton::clicked, this, &UVOutliner::onGroupButtonClicked);
     QObject::connect(ui->layoutAllButton, &QPushButton::clicked, this, &UVOutliner::onLayoutAllButtonClicked);
     QObject::connect(ui->recursiveLayoutAllButton, &QPushButton::clicked, this, &UVOutliner::onRecursiveLayoutAllButtonClicked);
-    QObject::connect(ui->treeWidget, &QWidget::customContextMenuRequested, this, &UVOutliner::onTreeWidgetContextMenuRequested);
 
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellAdded, this, &UVOutliner::onUvShellAdded);
     QObject::connect(MeshManager::getInst(), &MeshManager::meshUvShellIndexChanged, this, &UVOutliner::onUvShellIndexChanged);
@@ -40,6 +39,7 @@ UVOutliner::UVOutliner(QWidget* parent)
     QObject::connect(MeshManager::getInst(), &MeshManager::groupDeleted, this, &UVOutliner::onGroupDeleted);
     QObject::connect(MeshManager::getInst(), &MeshManager::uvShellAddedToGroup, this, &UVOutliner::onUvShellAddedToGroup);
     QObject::connect(MeshManager::getInst(), &MeshManager::uvShellRemovedFromGroup, this, &UVOutliner::onUvShellRemovedFromGroup);
+    QObject::connect(MeshManager::getInst(), &MeshManager::groupMoved, this, &UVOutliner::onGroupMoved);
 
     _selectionChangedCallbackId = MEventMessage::addEventCallback("SelectionChanged", MBasicFunction_wrapper<&UVOutliner::onSelectionChanged>, this);
 
@@ -87,12 +87,7 @@ ShellTreeWidgetItem* UVOutliner::addItem(MeshData* meshData, unsigned int uvShel
 
     item->setMeshData(meshData);
     item->setUvShellId(uvShellId);
-
-    auto wrapper = new QWidget(ui->treeWidget);
-    wrapper->setContentsMargins(0, 0, 0, 0);
-    item->setupUi(wrapper);
-
-    ui->treeWidget->setItemWidget(item, 0, wrapper);
+    item->setupWrapperWidget(ui->treeWidget);
 
     return item;
 }
@@ -104,13 +99,7 @@ GroupTreeWidgetItem* UVOutliner::addItem(UVGroup* group, QTreeWidgetItem* parent
     else item = new GroupTreeWidgetItem(parent);
 
     item->setGroup(group);
-
-    auto wrapper = new QWidget(ui->treeWidget);
-
-    wrapper->setContentsMargins(0, 0, 0, 0);
-    item->setupUi(wrapper);
-
-    ui->treeWidget->setItemWidget(item, 0, wrapper);
+    item->setupWrapperWidget(ui->treeWidget);
 
     return item;
 }
@@ -256,22 +245,6 @@ void UVOutliner::onRecursiveLayoutAllButtonClicked()
     MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("%1 %2").arg(LayoutAllCmd::kCmdName).arg(LayoutAllCmd::kRecursiveFlagName)));
 }
 
-void UVOutliner::onTreeWidgetContextMenuRequested(const QPoint& pos)
-{
-    QMenu contextMenu(ui->treeWidget);
-
-    auto expandAllAction = new QAction("Expand all", ui->treeWidget);
-    auto collapseAllAction = new QAction("Collapse all", ui->treeWidget);
-
-    contextMenu.addAction(expandAllAction);
-    contextMenu.addAction(collapseAllAction);
-
-    QObject::connect(expandAllAction, &QAction::triggered, ui->treeWidget, &QTreeWidget::expandAll);
-    QObject::connect(collapseAllAction, &QAction::triggered, ui->treeWidget, &QTreeWidget::collapseAll);
-
-    contextMenu.exec(ui->treeWidget->mapToGlobal(pos));
-}
-
 void UVOutliner::onUvShellAdded(MeshData* meshData, unsigned int uvShellId)
 {
     UVGroup* group = MeshManager::getInst()->getShellGroup(meshData, uvShellId);
@@ -386,11 +359,7 @@ void UVOutliner::onGroupDeleted(UVGroup* group)
             ui->treeWidget->addTopLevelItem(uvItem);
 
             //Recreate the wrapper widget
-            auto wrapper = new QWidget(ui->treeWidget);
-            wrapper->setContentsMargins(0, 0, 0, 0);
-            uvItem->setupUi(wrapper);
-
-            ui->treeWidget->setItemWidget(uvItem, 0, wrapper);
+            uvItem->setupWrapperWidget(ui->treeWidget);
         }
 
         //All chuld child  are reparented to the parent group, or the world
@@ -408,14 +377,10 @@ void UVOutliner::onGroupDeleted(UVGroup* group)
             }
 
             //Recreate the wrapper widget
-            auto wrapper = new QWidget(ui->treeWidget);
-            wrapper->setContentsMargins(0, 0, 0, 0);
-            childGroup->setupUi(wrapper);
-
-            ui->treeWidget->setItemWidget(childGroup, 0, wrapper);
+            childGroup->setupWrapperWidget(ui->treeWidget);
 
             //Recreate the wrapper widgets for all children
-            recreateShellWrapeprWidgetsRecursive(childGroup);
+            ui->treeWidget->recreateWidgetsRecursive(childGroup);
         }
 
         //Remove the group item
@@ -430,27 +395,6 @@ void UVOutliner::onGroupDeleted(UVGroup* group)
         }
 
         break;
-    }
-}
-
-void UVOutliner::recreateShellWrapeprWidgetsRecursive(GroupTreeWidgetItem* root)
-{
-    for (int i = 0; i < root->childCount(); i++)
-    {
-        QTreeWidgetItem* childItem = root->child(i);
-
-        if (auto uvItem = dynamic_cast<ShellTreeWidgetItem*>(childItem); uvItem)
-        {
-            auto wrapper = new QWidget(ui->treeWidget);
-            wrapper->setContentsMargins(0, 0, 0, 0);
-            uvItem->setupUi(wrapper);
-
-            ui->treeWidget->setItemWidget(uvItem, 0, wrapper);
-        }
-        else if (auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(childItem); groupItem)
-        {
-            recreateShellWrapeprWidgetsRecursive(groupItem);
-        }
     }
 }
 
@@ -510,11 +454,7 @@ void UVOutliner::reparentUvShellItem(UVGroup* group, MeshData* mesh, unsigned in
             }
 
             //Recreate the wrapper widget
-            auto wrapper = new QWidget(ui->treeWidget);
-            wrapper->setContentsMargins(0, 0, 0, 0);
-            shellItem->setupUi(wrapper);
-
-            ui->treeWidget->setItemWidget(shellItem, 0, wrapper);
+            shellItem->setupWrapperWidget(ui->treeWidget);
 
             break;
         }
@@ -532,6 +472,45 @@ void UVOutliner::onUvShellAddedToGroup(UVGroup* group, MeshData* mesh, unsigned 
 void UVOutliner::onUvShellRemovedFromGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex)
 {
     reparentUvShellItem(group, mesh, shellIndex, false);
+}
+
+void UVOutliner::onGroupMoved(UVGroup* group, UVGroup* target)
+{
+    //Find which tree widget item corresponds to the target
+    GroupTreeWidgetItem* targetItem = nullptr;
+    for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+    {
+        auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(*it);
+        if (!groupItem) continue;
+
+        if (groupItem->getGroup() == target)
+        {
+            targetItem = groupItem;
+            break;
+        }
+    }
+
+    for (QTreeWidgetItemIterator it(ui->treeWidget); *it; ++it)
+    {
+        auto groupItem = dynamic_cast<GroupTreeWidgetItem*>(*it);
+        if (!groupItem) continue;
+        if (groupItem->getGroup() != group) continue;
+
+        if (groupItem->parent())
+        {
+            groupItem->parent()->removeChild(groupItem);
+        }
+        else
+        {
+            int itemIndex = ui->treeWidget->indexOfTopLevelItem(groupItem);
+            ui->treeWidget->takeTopLevelItem(itemIndex);
+        }
+
+        targetItem->addChild(groupItem);
+        ui->treeWidget->recreateWidgetsRecursive(groupItem);
+
+        break;
+    }
 }
 
 void UVOutliner::selectUVShell(MeshData* meshData, unsigned int shellIndex, bool mergeWithExisting)

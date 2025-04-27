@@ -27,7 +27,26 @@
     <number>3</number>
    </property>
    <item>
+    <widget class="QLabel" name="iconLabel">
+     <property name="maximumSize">
+      <size>
+       <width>16</width>
+       <height>16</height>
+      </size>
+     </property>
+     <property name="pixmap">
+      <pixmap resource="Icons.qrc">:/Assets/uv-shell-icon.png</pixmap>
+     </property>
+     <property name="scaledContents">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QLabel" name="label">
+     <property name="styleSheet">
+      <string notr="true">padding-left: 2px;</string>
+     </property>
      <property name="text">
       <string>TEST Test test</string>
      </property>
@@ -35,6 +54,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="Icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

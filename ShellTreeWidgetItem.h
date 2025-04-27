@@ -1,5 +1,8 @@
 #pragma once
 
+#include <QLabel>
+#include <QMimeData>
+
 #include "UVTreeWidgetItem.h"
 #include "MeshData.h"
 
@@ -15,7 +18,7 @@ public:
     ShellTreeWidgetItem(QTreeWidgetItem* parent);
     virtual ~ShellTreeWidgetItem();
 
-    void setupUi(QWidget* widget);
+    virtual void setupUi(QWidget* widget) override;
 
     void setMeshData(MeshData* data) { _meshData = data; };
     MeshData* getMeshData() const { return _meshData; };
@@ -23,9 +26,15 @@ public:
     void setUvShellId(unsigned int id);
     unsigned int getUvShellId() const { return _uvShellId; };
 
+    QLabel* getIcon() const;
+
+protected:
+    virtual QDrag* onDrag() override;
+
 private:
     Ui::ShellTreeWidgetItem* _ui;
     bool _isUiInit = false;
+    QWidget* _widget;
 
     MeshData* _meshData;
     unsigned int _uvShellId;

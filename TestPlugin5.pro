@@ -52,6 +52,7 @@ SOURCES += \
     UVGroup.cpp \
     UVOutliner.cpp \
     UVOutlinerCmd.cpp \
+    UVTreeWidget.cpp \
     UVTreeWidgetItem.cpp
 
 HEADERS += \
@@ -71,6 +72,7 @@ HEADERS += \
     UVGroup.h \
     UVOutliner.h \
     UVOutlinerCmd.h \
+    UVTreeWidget.h \
     UVTreeWidgetItem.h
 
 FORMS += \
@@ -81,4 +83,5 @@ FORMS += \
     UVOutliner.ui
 
 RESOURCES += \
+    Icons.qrc \
     Scripts.qrc

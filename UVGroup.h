@@ -28,6 +28,7 @@ public:
 
     void addUvShell(MeshData* mesh, unsigned int shellIndex);
     void removeUvShell(MeshData* mesh, unsigned int shellIndex);
+    void move(UVGroup* target);
     QJsonObject serialize();
 
     void setName(const QString& name) { _name = name; };

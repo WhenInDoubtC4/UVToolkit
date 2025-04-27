@@ -55,6 +55,7 @@ signals:
     void groupDeleted(UVGroup* group);
     void uvShellAddedToGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
     void uvShellRemovedFromGroup(UVGroup* group, MeshData* mesh, unsigned int shellIndex);
+    void groupMoved(UVGroup* group, UVGroup* target);
 
 protected:
     MeshManager();
