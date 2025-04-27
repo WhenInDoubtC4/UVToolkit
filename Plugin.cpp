@@ -46,14 +46,6 @@ MStatus initializePlugin( MObject obj )
     plugin.registerCommand(GroupShellsCmd::kCmdName, GroupShellsCmd::creator, GroupShellsCmd::syntax);
     plugin.registerCommand(LayoutAllCmd::kCmdName, LayoutAllCmd::creator);
 
-    //Run init plugin script
-    // PyScript script(":/onInitPlugin.py");
-    // MGlobal::executePythonCommand(script.getMString());
-
-    // script.setGlobal("GLOVBAL", "meow");
-    // script.setGlobal("TEST1", 69);
-    // script.setGlobal("TEST2", true);
-
     // uvEditorOpenCallbackId = MEventMessage::addEventCallback("texWindowEditorShowup", [](void* data)
     // {
     //     MGlobal::displayInfo("UV editor opened!!");

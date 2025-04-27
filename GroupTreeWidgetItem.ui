@@ -41,17 +41,17 @@
        </property>
        <item>
         <widget class="QLabel" name="groupLabel">
-         <property name="minimumSize">
+         <property name="maximumSize">
           <size>
-           <width>20</width>
-           <height>0</height>
+           <width>16</width>
+           <height>16</height>
           </size>
          </property>
-         <property name="styleSheet">
-          <string notr="true">background-color: rgb(81, 255, 0);</string>
+         <property name="pixmap">
+          <pixmap resource="Icons.qrc">:/Assets/group-icon.png</pixmap>
          </property>
-         <property name="text">
-          <string>{}</string>
+         <property name="scaledContents">
+          <bool>true</bool>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -103,6 +103,8 @@
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="Icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

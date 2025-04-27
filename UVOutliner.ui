@@ -19,6 +19,10 @@
      <property name="text">
       <string>Layout all</string>
      </property>
+     <property name="icon">
+      <iconset resource="Icons.qrc">
+       <normaloff>:/Assets/layout-all-icon.png</normaloff>:/Assets/layout-all-icon.png</iconset>
+     </property>
     </widget>
    </item>
    <item row="1" column="0" colspan="2">
@@ -44,12 +48,20 @@
      <property name="text">
       <string>Group selection</string>
      </property>
+     <property name="icon">
+      <iconset resource="Icons.qrc">
+       <normaloff>:/Assets/new-group-icon.png</normaloff>:/Assets/new-group-icon.png</iconset>
+     </property>
     </widget>
    </item>
    <item row="3" column="0" colspan="2">
     <widget class="QPushButton" name="recursiveLayoutAllButton">
      <property name="text">
       <string>Layout all recursively</string>
+     </property>
+     <property name="icon">
+      <iconset resource="Icons.qrc">
+       <normaloff>:/Assets/layout-all-recursive-icon.png</normaloff>:/Assets/layout-all-recursive-icon.png</iconset>
      </property>
     </widget>
    </item>
@@ -62,6 +74,8 @@
    <header>UVTreeWidget.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="Icons.qrc"/>
+ </resources>
  <connections/>
 </ui>

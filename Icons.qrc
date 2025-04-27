@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>Assets/uv-shell-icon.png</file>
+        <file>Assets/group-icon.png</file>
+        <file>Assets/new-group-icon.png</file>
+        <file>Assets/layout-all-icon.png</file>
+        <file>Assets/layout-all-recursive-icon.png</file>
+        <file>Assets/group-layout-icon.png</file>
+        <file>Assets/group-layout-recursive-icon.png</file>
+    </qresource>
+</RCC>

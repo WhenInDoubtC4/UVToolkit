@@ -1,50 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 7.9 8">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" viewBox="0 0 32.6 22.8">
   <defs>
     <style>
       .cls-1 {
-        stroke-opacity: .8;
-        stroke-width: .8px;
-      }
-
-      .cls-1, .cls-2, .cls-3 {
-        fill: none;
-      }
-
-      .cls-1, .cls-3 {
-        stroke: #59f;
+        fill: #5fad88;
       }
 
       .cls-2 {
-        stroke: #ccc;
-        stroke-linejoin: round;
-        stroke-width: 1.2px;
-      }
-
-      .cls-4 {
-        fill: #59f;
-      }
-
-      .cls-3 {
-        stroke-opacity: .5;
-        stroke-width: .5px;
+        fill: #3a3a3a;
       }
     </style>
   </defs>
   <!-- Generator: Adobe Illustrator 28.6.0, SVG Export Plug-In . SVG Version: 1.2.0 Build 709)  -->
   <g>
     <g id="Layer_1">
-      <rect class="cls-2" x=".8" y=".8" width="6.3" height="6.3"/>
-      <line class="cls-1" x1=".8" y1=".8" x2="7.1" y2=".8"/>
-      <line class="cls-1" x1="7.1" y1=".8" x2="7.1" y2="7.2"/>
-      <line class="cls-1" x1="7.1" y1="7.1" x2=".8" y2="7.1"/>
-      <line class="cls-1" x1=".8" y1="7.2" x2=".8" y2=".9"/>
-      <line class="cls-3" x1=".8" y1=".8" x2="7.1" y2="7.2"/>
-      <line class="cls-3" x1="7.1" y1=".8" x2=".8" y2="7.1"/>
-      <circle class="cls-4" cx="7.1" cy="7.1" r=".8"/>
-      <circle class="cls-4" cx=".8" cy=".8" r=".8"/>
-      <circle class="cls-4" cx="7.1" cy=".8" r=".8"/>
-      <circle class="cls-4" cx=".8" cy="7.2" r=".8"/>
+      <g>
+        <polygon class="cls-1" points=".9 11.4 16.3 .6 31.7 11.4 16.3 22.2 .9 11.4"/>
+        <path class="cls-2" d="M16.3,1.2l14.6,10.2-14.6,10.2L1.7,11.4,16.3,1.2M16.3,0L0,11.4l16.3,11.4,16.3-11.4L16.3,0h0Z"/>
+      </g>
     </g>
   </g>
 </svg>

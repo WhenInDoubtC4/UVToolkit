@@ -218,7 +218,9 @@ void GroupTreeWidgetItemEventFilter::onCustomContextMenuRequested(const QPoint& 
     QMenu contextMenu(_widget);
 
     auto layoutAction = new QAction("Layout", _widget);
+    layoutAction->setIcon(QIcon(":/Assets/group-layout-icon.png"));
     auto recursiveLayoutAction = new QAction("Layout recursively", _widget);
+    recursiveLayoutAction->setIcon(QIcon(":/Assets/group-layout-recursive-icon.png"));
     auto unparentAction = new QAction("Unparent", _widget);
     auto deleteAction = new QAction("Delete", _widget);
 
