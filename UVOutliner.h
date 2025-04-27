@@ -5,6 +5,7 @@
 #include <QStyledItemDelegate>
 #include <QAbstractItemModel>
 #include <QPainter>
+#include <QMenuBar>
 
 #include <maya/MQtUtil.h>
 #include <maya/MDagPath.h>
@@ -50,6 +51,8 @@ public:
 private:
     Ui::UVOutliner* ui;
     QWidget* _wrapper;
+
+    void setupMenuBar();
 
     void selectUVShell(MeshData* meshData, unsigned int shellIndex, bool mergeWithExisting = false);
     void selectUVShellsRecursively(GroupTreeWidgetItem* root);

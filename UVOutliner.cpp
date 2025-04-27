@@ -23,10 +23,11 @@ UVOutliner::UVOutliner(QWidget* parent)
 
     ui->treeWidget->setItemDelegate(new UVTreeWidgetItemDelegate(ui->treeWidget));
 
+    setupMenuBar();
+
     /////////////////////////////////////////////////////////
     /// Add callbacks
     QObject::connect(ui->treeWidget, &QTreeWidget::itemSelectionChanged, this, &UVOutliner::onTreeWidgetItemSelectionChanged);
-    QObject::connect(ui->refreshButton, &QPushButton::clicked, this, &UVOutliner::onRefreshButtonClicked);
     QObject::connect(ui->groupButton, &QPushButton::clicked, this, &UVOutliner::onGroupButtonClicked);
     QObject::connect(ui->layoutAllButton, &QPushButton::clicked, this, &UVOutliner::onLayoutAllButtonClicked);
     QObject::connect(ui->recursiveLayoutAllButton, &QPushButton::clicked, this, &UVOutliner::onRecursiveLayoutAllButtonClicked);
@@ -75,6 +76,27 @@ UVOutliner::~UVOutliner()
 QTreeWidget* UVOutliner::getTreeWidget()
 {
     return ui->treeWidget;
+}
+
+void UVOutliner::setupMenuBar()
+{
+    auto menuBar = new QMenuBar(this);
+    auto viewMenu = new QMenu("View", this);
+
+    auto refreshAction = new QAction("Refresh", this);
+    auto expandAllAction = new QAction("Expand all", this);
+    auto collapseAllAction = new QAction("Collapse all", this);
+    viewMenu->addAction(refreshAction);
+    viewMenu->addAction(expandAllAction);
+    viewMenu->addAction(collapseAllAction);
+
+    menuBar->addMenu(viewMenu);
+
+    ui->gridLayout->setMenuBar(menuBar);
+
+    QObject::connect(refreshAction, &QAction::triggered, this, &UVOutliner::onRefreshButtonClicked);
+    QObject::connect(expandAllAction, &QAction::triggered, ui->treeWidget, &QTreeWidget::expandAll);
+    QObject::connect(collapseAllAction, &QAction::triggered, ui->treeWidget, &QTreeWidget::collapseAll);
 }
 
 ShellTreeWidgetItem* UVOutliner::addItem(MeshData* meshData, unsigned int uvShellId, QTreeWidgetItem* parent)
