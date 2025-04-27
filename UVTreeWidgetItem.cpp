@@ -113,6 +113,30 @@ void UVTreeWidgetItemDelegate::paint(QPainter* painter, const QStyleOptionViewIt
         painter->drawRect(opt.rect.adjusted(1, 1, -1, -1));
         painter->restore();
     }
+
+    if (uvItem && uvItem->isDropTarget())
+    {
+        qDebug() << "Drop target!!";
+
+        //Save painter state
+        painter->save();
+
+        //Create a dotted pen for the border (Windows style)
+        QPen dottedPen;
+        dottedPen.setStyle(Qt::DotLine);  //Use dotted instead of dashed
+        QVector<qreal> pattern;
+        pattern << 1.0 << 1.0;  //1px dot, 1px space
+        dottedPen.setDashPattern(pattern);
+        dottedPen.setWidth(1);
+        dottedPen.setColor(QColor(255, 255, 255));
+        painter->setPen(dottedPen);
+
+        QRect rect = option.rect.adjusted(1, 1, -1, -1);
+        painter->drawRect(rect);
+
+        //Restore painter state
+        painter->restore();
+    }
 }
 
 UVTreeWidgetItemEventFilter::UVTreeWidgetItemEventFilter(UVTreeWidgetItem* parent, QWidget* widget, QWidget* dragHandle)

@@ -31,6 +31,9 @@ public:
     SelectionState getSelectionState() const { return _selectionState; };
     void setSelectionState(const SelectionState& state, bool propagateToChildren = false, bool propagateToParents = false);
 
+    bool isDropTarget() const { return _isDropTarget; };
+    void setDropTarget(bool dropTarget) { _isDropTarget = dropTarget; };
+
     virtual void setupUi(QWidget* widget) = 0;
     virtual void setupDragAndDrop(QWidget* widget, QWidget* dragHandle);
 
@@ -43,6 +46,7 @@ private:
     friend class UVTreeWidgetItemEventFilter;
 
     SelectionState _selectionState;
+    bool _isDropTarget = false;
 };
 
 // Custom delegate to paint the items based on their selection state

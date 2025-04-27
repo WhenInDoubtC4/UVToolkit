@@ -78,19 +78,29 @@ bool GroupTreeWidgetItemEventFilter::eventFilter(QObject* watched, QEvent* event
         if (dragEnterEvent->mimeData()->hasFormat(MimeTypes::SHELL_TREE_WIDGET_ITEM) ||
             dragEnterEvent->mimeData()->hasFormat(MimeTypes::GROUP_TREE_WIDGET_ITEM))
         {
+            qDebug() << "Drag enter";
+            _parent->setDropTarget(true);
+            _parent->treeWidget()->viewport()->update();
             dragEnterEvent->acceptProposedAction();
         }
 
         return false;
     }
-
-    if (event->type() == QEvent::Drop)
+    else if (event->type() == QEvent::DragLeave)
+    {
+        _parent->setDropTarget(false);
+        _parent->treeWidget()->viewport()->update();
+    }
+    else if (event->type() == QEvent::Drop)
     {
         auto dropEvent = dynamic_cast<QDropEvent*>(event);
         if (!dropEvent) return false;
 
         if (dropEvent->mimeData()->hasFormat(MimeTypes::SHELL_TREE_WIDGET_ITEM)) onShellDrop(dropEvent);
         else if (dropEvent->mimeData()->hasFormat(MimeTypes::GROUP_TREE_WIDGET_ITEM)) onGroupDrop(dropEvent);
+
+        _parent->setDropTarget(false);
+        _parent->treeWidget()->viewport()->update();
         return false;
     }
 
