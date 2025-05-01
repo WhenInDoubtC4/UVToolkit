@@ -36,6 +36,7 @@ public:
     const long long getId() const { return _id; };
     QString getName() { return _name; };
     const QList<QPair<MDagPath, unsigned int>>& getShells() const { return _shells; };
+    const QList<QPair<MDagPath, unsigned int>> getShellsRecursive() const;
     UVGroup* getParent() { return _parent; };
     const QSet<UVGroup*>& getChildren() const { return _children; };
 
@@ -43,9 +44,12 @@ public:
     AABB getAABBRecursive() const;
     MSelectionList getFaces() const;
     MSelectionList getFacesRecursive() const;
-    double getUvArea();
+    double getAvgUvArea();
     double layout();
     double layoutRecursively();
+
+    static double getDensity(const MObject& component);
+    double getAvgDensity();
 
 private:
     friend class MeshManager;

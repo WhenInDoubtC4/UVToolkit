@@ -33,7 +33,7 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
      * 1. Gather all top level groups
      * 2. Create selection lists for: everything, each group
      * 3. Layout everything
-     * 4. Get the UV area of an arbitrary shell in each group
+     * 4. Get the UV  of an arbitrary shell in each group
      * 5. Layout the groups only
      * 6. Scale the group back down to match the UV area of what was noted earlier
      * 7. Create a proxy plane for each group
@@ -71,7 +71,7 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
     for (int i = 0; i < topLevelGroups.size(); i++)
     {
         MSelectionList currentGroupSelection;
-        for (const QPair<MDagPath, unsigned int>& shell : topLevelGroups[i]->getShells())
+        for (const QPair<MDagPath, unsigned int>& shell : topLevelGroups[i]->getShellsRecursive())
         {
             MeshData* mesh = MeshData::getMeshData(shell.first);
             if (!mesh) continue;
@@ -91,7 +91,7 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
     QList<MDagPath> proxyPlanes(topLevelGroups.size());
     QList<MSelectionList> planeSelections(topLevelGroups.size());
     QList<double> proxyPlaneScales(topLevelGroups.size());
-
+    QList<double> proxyPlaneInitialDenisites(topLevelGroups.size());
     for (int i = 0; i < topLevelGroups.size(); i++)
     {
         double scaleFactor = -.1;
@@ -123,7 +123,7 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
 
         //Create the proxy bounding plane
         MStringArray planeCommandOutput;
-        if (!MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyPlane -w %1 -h %2 -sx 1 -sy 1 -createUVs 2").arg(groupAabb.xmax - groupAabb.xmin).arg(groupAabb.ymax - groupAabb.ymin)), planeCommandOutput))
+        if (!MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyPlane -w %1 -h %2 -sx 1 -sy 1 -createUVs 1 -ch false").arg(groupAabb.xmax - groupAabb.xmin).arg(groupAabb.ymax - groupAabb.ymin)), planeCommandOutput))
         {
             MGlobal::displayError("Could not create proxy plane for group");
             return MStatus::kFailure;
@@ -155,6 +155,8 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
         MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyEditUV -pu 0 -pv 0 -su %1 -sv %1").arg(scaleFactor)));
         planeSelections[i] = planeUvSelection;
         MGlobal::clearSelectionList();
+
+        proxyPlaneInitialDenisites[i] = UVGroup::getDensity(proxyPlanes[i].node());
     }
 
     ///////////////////////////////////////////////////
@@ -192,13 +194,9 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
         MGlobal::clearSelectionList();
         MGlobal::setActiveSelectionList(topLevelGroupSelections[i]);
 
-        // UVGroup::AABB groupAabb = topLevelGroups[i]->getAABB();
-        // double newScale = sqrt((groupAabb.xmax - groupAabb.xmin) * (groupAabb.ymax - groupAabb.ymin));
-        // double scaleFactor = proxyPlaneScales[i] / newScale;
-        // qDebug() << "Plane scale" << newScale << "group scale factor" << scaleFactor;
-        // scaleFactor *= .995; //Apply a small padding so shells won't overlap
-
-        MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyEditUV -pu 0 -pv 0 -su %1 -sv %1").arg(0.995)));
+        double planeNewDensity = UVGroup::getDensity(proxyPlanes[i].node());
+        double scaleFactor = planeNewDensity / proxyPlaneInitialDenisites[i];
+        MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyEditUV -pu 0 -pv 0 -su %1 -sv %1").arg(scaleFactor)));
 
         //Get bottom left position of the plane
         float planeXMin = std::numeric_limits<float>::max();
@@ -240,6 +238,6 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
     MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("optionVar -iv %1 %2").arg(OptionVars::SHELL_PRE_SCALING).arg(prevShellScalingSetting)));
 
     //Clear selection
-    MGlobal::clearSelectionList();
+    //MGlobal::clearSelectionList();
     return MStatus::kSuccess;
 }

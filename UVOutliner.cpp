@@ -549,7 +549,7 @@ void UVOutliner::selectUVShell(MeshData* meshData, unsigned int shellIndex, bool
 {
     MDagPath meshDagPath(meshData->getDagPath());
 
-    qDebug() << "Selected " << meshDagPath.fullPathName().asChar();
+    //qDebug() << "Selected " << meshDagPath.fullPathName().asChar();
 
     MObject shellComponent = meshData->getUvShell(shellIndex).faces;
 

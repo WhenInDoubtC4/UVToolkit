@@ -43,6 +43,18 @@ QJsonObject UVGroup::serialize()
     return result;
 }
 
+const QList<QPair<MDagPath, unsigned int>> UVGroup::getShellsRecursive() const
+{
+    QList<QPair<MDagPath, unsigned int>> result = getShells();
+
+    for (UVGroup* childGroup : _children)
+    {
+        result << childGroup->getShellsRecursive();
+    }
+
+    return result;
+}
+
 UVGroup::AABB UVGroup::getAABB() const
 {
     AABB result;
@@ -79,6 +91,7 @@ UVGroup::AABB UVGroup::getAABBRecursive() const
 
         result.xmin = std::min(result.xmin, childAabb.xmin);
         result.ymin = std::min(result.ymin, childAabb.ymin);
+
         result.xmax = std::max(result.xmax, childAabb.xmax);
         result.ymax = std::max(result.ymax, childAabb.ymax);
     }
@@ -86,9 +99,10 @@ UVGroup::AABB UVGroup::getAABBRecursive() const
     return result;
 }
 
-double UVGroup::getUvArea()
+double UVGroup::getAvgUvArea()
 {
-    double result = -1.;
+    double result = 0.;
+    int count = 0;
 
     for (const QPair<MDagPath, unsigned int>& shell : _shells)
     {
@@ -97,11 +111,68 @@ double UVGroup::getUvArea()
         {
             if (it.zeroUVArea()) continue;
 
-            it.getUVArea(result);
-            return result;
+            double currentUvArea;
+            it.getUVArea(currentUvArea);
+
+            double worldArea;
+            it.getArea(worldArea);
+
+            result += currentUvArea / worldArea;
+            count++;
         }
     }
 
+    result /= count;
+    return result;
+}
+
+double UVGroup::getDensity(const MObject& component)
+{
+    double result = 0.;
+    int count = 0;
+
+    for (MItMeshPolygon it(component); !it.isDone(); it.next())
+    {
+        if (it.zeroUVArea()) continue;
+
+        double currentUvArea;
+        it.getUVArea(currentUvArea);
+
+        double worldArea;
+        it.getArea(worldArea);
+
+        result += sqrt(currentUvArea / worldArea);
+        count++;
+    }
+
+    result /= count;
+    return result;
+}
+
+double UVGroup::getAvgDensity()
+{
+    double result = 0.;
+    int count = 0;
+
+    for (const QPair<MDagPath, unsigned int>& shell : _shells)
+    {
+        MeshData::UVData shellData = MeshData::getMeshData(shell.first)->getUvShell(shell.second);
+        for (MItMeshPolygon it(shell.first, shellData.faces); !it.isDone(); it.next())
+        {
+            if (it.zeroUVArea()) continue;
+
+            double currentUvArea;
+            it.getUVArea(currentUvArea);
+
+            double worldArea;
+            it.getArea(worldArea);
+
+            result += (currentUvArea / worldArea);
+            count++;
+        }
+    }
+
+    result /= count;
     return result;
 }
 
@@ -156,7 +227,7 @@ double UVGroup::layout()
     }
 
     //Get the UV area of an arbitrary shell in the group
-    double initialArea = getUvArea();
+    double initialArea = getAvgUvArea();
     if (initialArea <= 0.)
     {
         MGlobal::displayError("Shells in the group have an invalid area. If this issue persists do a layout manually first");
@@ -169,14 +240,14 @@ double UVGroup::layout()
     MGlobal::executeCommand(Commands::LAYOUT_UV);
 
     //Get the new area and scale it back to its intial value
-    double newArea = getUvArea();
+    double newArea = getAvgUvArea();
     if (newArea <= 0.)
     {
         MGlobal::displayError("UV area invalid after group layout");
         return -1.;
     }
 
-    double scaleFactor = sqrt(initialArea / newArea);
+    double scaleFactor = sqrt(initialArea) / sqrt(newArea);
     MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyEditUV -pu 0 -pv 0 -su %1 -sv %1").arg(scaleFactor)));
 
     //Restore initial shell scaling setting
@@ -202,6 +273,7 @@ double UVGroup::layoutRecursively()
     MGlobal::setOptionVarValue(OptionVars::SHELL_PRE_SCALING, 1);
 
     QList<QPair<UVGroup*, MDagPath>> childGroupSet;
+    //QMap<UVGroup*, double> oldPlaneDensityMap;
     MSelectionList topLevelSelection;
     for (UVGroup* childGroup : _children)
     {
@@ -214,7 +286,7 @@ double UVGroup::layoutRecursively()
         if (!childAabb.isValid()) return -1.;
 
         MStringArray planeCommandOutput;
-        if (!MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyPlane -w %1 -h %2 -sx 1 -sy 1 -createUVs 2").arg(childAabb.xmax - childAabb.xmin).arg(childAabb.ymax - childAabb.ymin)), planeCommandOutput)) return -1.;
+        if (!MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyPlane -w %1 -h %2 -sx 1 -sy 1 -createUVs 1 -ch false").arg(childAabb.xmax - childAabb.xmin).arg(childAabb.ymax - childAabb.ymin)), planeCommandOutput)) return -1.;
 
         MSelectionList planeSelection;
         planeSelection.add(planeCommandOutput[0]);
@@ -237,6 +309,10 @@ double UVGroup::layoutRecursively()
         MGlobal::clearSelectionList();
 
         childGroupSet << qMakePair(childGroup, planePath);
+
+        //planePath.extendToShape();
+        //oldPlaneDensityMap[childGroup] = getDensity(planePath.node());
+       // qDebug() << "-------------------- old plane density" << oldPlaneDensityMap[childGroup];
     }
 
     //Add the top level shells to the selection with the planes
@@ -250,7 +326,7 @@ double UVGroup::layoutRecursively()
     }
 
     //Get initial area
-    double initialArea = getUvArea();
+    double initialArea = getAvgUvArea();
     if (initialArea <= 0.) return -1.;
 
     //Layout shells in the group and the proxy planes
@@ -263,8 +339,6 @@ double UVGroup::layoutRecursively()
     {
         MGlobal::clearSelectionList();
         MGlobal::setActiveSelectionList(childGroup.first->getFaces());
-
-        MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyEditUV -pu 0 -pv 0 -su %1 -sv %1").arg(0.995)));
 
         //Get bottom left position of the plane
         float planeXMin = std::numeric_limits<float>::max();
@@ -288,15 +362,17 @@ double UVGroup::layoutRecursively()
         //Delete the plane
         MSelectionList planeTransform;
         planeTransform.add(childGroup.second.transform());
+        planeTransform.add(childGroup.second.node());
+        MGlobal::clearSelectionList();
         MGlobal::setActiveSelectionList(planeTransform);
         MGlobal::executeCommand(Commands::DELETE_SELECTION);
     }
 
     //Scale the entire thing down to its initial size
-    double newArea = getUvArea();
+    double newArea = getAvgUvArea();
     if (newArea <= 0.) return -1.;
 
-    double scaleFactor = sqrt(initialArea / newArea);
+    double scaleFactor = sqrt(initialArea) / sqrt(newArea);
     MGlobal::clearSelectionList();
     MGlobal::setActiveSelectionList(topLevelSelection);
     MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("polyEditUV -pu 0 -pv 0 -su %1 -sv %1").arg(scaleFactor)));
