@@ -273,7 +273,6 @@ double UVGroup::layoutRecursively()
     MGlobal::setOptionVarValue(OptionVars::SHELL_PRE_SCALING, 1);
 
     QList<QPair<UVGroup*, MDagPath>> childGroupSet;
-    //QMap<UVGroup*, double> oldPlaneDensityMap;
     MSelectionList topLevelSelection;
     for (UVGroup* childGroup : _children)
     {
@@ -309,10 +308,6 @@ double UVGroup::layoutRecursively()
         MGlobal::clearSelectionList();
 
         childGroupSet << qMakePair(childGroup, planePath);
-
-        //planePath.extendToShape();
-        //oldPlaneDensityMap[childGroup] = getDensity(planePath.node());
-       // qDebug() << "-------------------- old plane density" << oldPlaneDensityMap[childGroup];
     }
 
     //Add the top level shells to the selection with the planes

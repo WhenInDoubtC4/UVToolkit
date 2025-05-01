@@ -13,7 +13,7 @@ UVOutliner::UVOutliner(QWidget* parent)
     _wrapper = new QWidget(this);
     ui->setupUi(_wrapper);
 
-    setDockableParameters(true, true, MayaQWidgetDockableMixin::Area::A_LEFT, MayaQWidgetDockableMixin::AllowedArea::ALL, 300, 300, 0, 0, true);
+    setDockableParameters(true, true, MayaQWidgetDockableMixin::Area::A_LEFT, MayaQWidgetDockableMixin::AllowedArea::ALL, 300, 600, 0, 0, true);
     QWidget* centralWidget = getMayaControl();
     MQtUtil::addWidgetToMayaLayout(_wrapper, centralWidget);
 

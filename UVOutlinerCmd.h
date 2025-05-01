@@ -29,9 +29,6 @@ public:
 
     inline static const char kCmdName[] = "uvOutliner";
 
-    inline static const char kShowWindowFlagShortName[] = "-sw";
-    inline static const char kShowWindowFlagName[] = "-showWindow";
-
 private:
     inline static UVOutliner* _window = nullptr;
 };

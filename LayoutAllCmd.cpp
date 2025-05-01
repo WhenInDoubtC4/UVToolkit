@@ -238,6 +238,6 @@ MStatus LayoutAllCmd::doIt(const MArgList& argList)
     MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("optionVar -iv %1 %2").arg(OptionVars::SHELL_PRE_SCALING).arg(prevShellScalingSetting)));
 
     //Clear selection
-    //MGlobal::clearSelectionList();
+    MGlobal::clearSelectionList();
     return MStatus::kSuccess;
 }

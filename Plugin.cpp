@@ -30,6 +30,32 @@ void myMessageOutput(QtMsgType type, const QMessageLogContext &context, const QS
     std::cout << msg.toStdString() << "\n";
 }
 
+QMenu* pluginMenu;
+
+void setupMenuBar()
+{
+    auto mainWindow = dynamic_cast<QMainWindow*>(MQtUtil::mainWindow());
+    if (!mainWindow) return;
+
+    pluginMenu = new QMenu("UV Group Util", MQtUtil::mainWindow());
+
+    auto showOutlinerAction = new QAction("UV Outliner");
+
+    QObject::connect(showOutlinerAction, &QAction::triggered, [=]
+    {
+        MGlobal::executeCommand(UVOutlinerCmd::kCmdName);
+    });
+
+    pluginMenu->addAction(showOutlinerAction);
+
+    mainWindow->menuBar()->addMenu(pluginMenu);
+}
+
+void cleanupMenuBar()
+{
+    delete pluginMenu;
+}
+
 MStatus initializePlugin( MObject obj )
 {
     isPluginBeingUnloaded = false;
@@ -92,9 +118,7 @@ MStatus initializePlugin( MObject obj )
         MGlobal::executeCommand(MQtUtil::toMString(QStringLiteral("%1 %2").arg(GroupShellsCmd::kCmdName).arg(GroupShellsCmd::kDeserializeFlagName)));
     });
 
-    int result;
-    MGlobal::executeCommand("workspaceControl -q -exists polyTexturePlacementPanel1Window", result);
-    qDebug() << "REsult is " << result;
+    setupMenuBar();
 
     return MStatus::kSuccess;
 }
@@ -104,6 +128,8 @@ MStatus uninitializePlugin( MObject obj )
     isPluginBeingUnloaded = true;
 
     MFnPlugin plugin(obj);
+
+    cleanupMenuBar();
 
     plugin.deregisterNode(GroupDataNode::typeId);
 
